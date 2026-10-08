@@ -1,5 +1,7 @@
 # regulad's Tailscale policy
 
+[![wakatime](https://wakatime.com/badge/github/regulad/tailscale-acls.svg)](https://wakatime.com/badge/github/regulad/tailscale-acls)
+
 This repository contains my Tailscale configuration: both DNS and ACL. It is the sister project to my [`dotfiles`](https://github.com/regulad/dotfiles) configuration.
 
 My tailnet includes site-to-site routing, self-hosted and Mullvad-hosted exit nodes, and scoped access via tags. For instance, CI job runners that need to SSH into a specific host are only permitted to access that host (and any DNS resolvers). 
