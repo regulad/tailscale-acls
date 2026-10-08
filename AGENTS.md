@@ -14,9 +14,10 @@ Keep Git commit signing enabled; never disable it.
 
 ## Applying changes
 
-- Commit straight to `master` and push; no pull requests. Every push runs
-  `.github/workflows/tailscale.yml`, which applies `policy.hujson` to the
-  live tailnet, so a push is a production change.
+- Commit straight to `master` and push; no pull requests. Every push that
+  changes `policy.hujson` (or the workflow) runs
+  `.github/workflows/tailscale.yml`, which applies the policy to the live
+  tailnet, so such a push is a production change.
 - Pushing and watching the run takes minutes, so commit small or cosmetic
   changes locally and push them along with the next semantic change.
 - Tailscale validates the file (syntax and any `tests`) before accepting it.

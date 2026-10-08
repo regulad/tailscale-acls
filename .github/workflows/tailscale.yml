@@ -3,6 +3,9 @@ name: Sync Tailscale ACLs
 on:
   push:
     branches: [ "master" ]
+    paths:
+      - policy.hujson
+      - .github/workflows/tailscale.yml
 
 # id-token: write lets gitops-acl-action mint a GitHub OIDC token for the
 # Tailscale federated identity; no long-lived Tailscale secret is stored.

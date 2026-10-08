@@ -6,6 +6,8 @@ repository:
   description: "regulad's Tailscale policy"
   topics: tailscale, tailnet, acl, gitops, hujson
 
+  private: false
+
   has_issues: false
   has_projects: false
   has_wiki: false
