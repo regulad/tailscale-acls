@@ -215,10 +215,11 @@
                 "ipset:aboriginal--regulad--internal",
                 "ipset:aboriginal--tail11540--ts--net",
             ],
+            // No udp:7359 (Jellyfin client discovery): it is broadcast-based,
+            // and the tailnet carries no broadcast or multicast traffic.
             "ip":  [
                 "tcp:8096", // Jellyfin HTTP
                 "tcp:8920", // Jellyfin HTTPS
-                "udp:7359", // Jellyfin client discovery
                 "tcp:8123", // Home Assistant HTTP
             ],
         },
