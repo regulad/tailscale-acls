@@ -40,7 +40,8 @@ Keep Git commit signing enabled; never disable it.
   `regulad.internal`).
 - IPv6 is first class in this network; IPv4 is secondary. Every machine and
   subnet is listed with its IPv6 address(es), IPv6 first. Don't add an
-  IPv4-only entry without finding the IPv6 counterpart.
+  IPv4-only entry without finding the IPv6 counterpart; a machine that
+  genuinely has no IPv6 is a legacy host, and its comment says so.
 - Name a single-address machine in `hosts`; anything with several addresses
   (a site's subnets, a machine with IPv6 and IPv4) is an `ipsets` entry.
 
@@ -50,6 +51,6 @@ Keep Git commit signing enabled; never disable it.
 `GET /api/v2/tailnet/-/dns/configuration`. Nothing applies it yet: change
 DNS in the admin console and update `dns.json` to match. Every node must be
 able to reach the global nameservers ("Override DNS servers" is on, so a
-node that can't loses DNS entirely). The resolvers grant opens them, and
-the sites' split-DNS resolvers, to every node on port 53; add new
-nameservers there.
+node that can't loses DNS entirely). The resolvers grant opens every
+nameserver in `dns.json`, global and split-DNS, to every node on port 53;
+add new nameservers there.

@@ -59,11 +59,24 @@
             "2603:c020:4016:ae50:0:efc0:c547:1a01",
             "10.131.80.239",
         ],
+        // Split-DNS resolver for ncsu.edu and ncstate.net. A tailnet node
+        // (tag:server), so these are its Tailscale addresses.
+        "ipset:ncsusplitt--tail11540--ts--net": [
+            "fd7a:115c:a1e0::8138:4c71",
+            "100.123.76.112",
+        ],
         // kodi-plugins publish target (homelab, fixed addresses).
         "ipset:ingress--regulad--internal": [
             "fd83:b84c:aa57:1:be24:11ff:fe4a:25fa",
             "10.23.2.31",
         ],
+    },
+    // Single-address machines, named after their domain ("--" stands for
+    // ".").
+    "hosts": {
+        // LEGACY host: IPv4 only. Split-DNS resolver for
+        // regulad-verizon-livingston.internal (homelab).
+        "cr1000b--regulad-verizon-livingston--internal": "10.23.0.1",
     },
     "nodeAttrs": [
         {
@@ -129,15 +142,19 @@
             "ip":  ["*"],
         },
         {
-            // Every node may query the resolvers, so DNS keeps working for
-            // nodes with no other grant into the sites: pihole for
+            // Every node may query every resolver in dns.json, so DNS keeps
+            // working for nodes with no other grant to them: pihole for
             // everything, arawi for regulad.internal, the VCN edge router for
-            // pubsub.wahlecloud.oraclevcn.com.
+            // pubsub.wahlecloud.oraclevcn.com, ncsusplitt for ncsu.edu and
+            // ncstate.net, and the legacy cr1000b for
+            // regulad-verizon-livingston.internal.
             "src": ["*"],
             "dst": [
                 "ipset:pihole--regulad--internal",
                 "ipset:arawi--regulad--internal",
                 "ipset:tailscalerouter--pubsub--wahlecloud--oraclevcn--com",
+                "ipset:ncsusplitt--tail11540--ts--net",
+                "cr1000b--regulad-verizon-livingston--internal",
             ],
             "ip":  ["udp:53", "tcp:53"],
         },
