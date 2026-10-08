@@ -43,6 +43,11 @@ Keep Git commit signing enabled; never disable it.
   subnet is listed with its IPv6 address(es), IPv6 first. Don't add an
   IPv4-only entry without finding the IPv6 counterpart; a machine that
   genuinely has no IPv6 is a legacy host, and its comment says so.
+- Never list the homelab's public IPv6 prefix anywhere: it is
+  DHCPv6-assigned and changes. Its ULA (`fd83:b84c:aa57:1::/64`) is what the
+  policy uses. Grants give "the internet" as `ipset:internet`
+  (`autogroup:internet` minus the VCN's public /64), not as
+  `autogroup:internet` directly.
 - Name a single-address machine in `hosts`; anything with several addresses
   (a site's subnets, a machine with IPv6 and IPv4) is an `ipsets` entry.
 

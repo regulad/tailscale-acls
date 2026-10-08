@@ -46,6 +46,15 @@
             "2603:c020:4016:ae50::/64",
             "10.131.80.0/24",
         ],
+        // The internet, as reached through exit nodes, minus the VCN: its
+        // IPv6 /64 is public, so autogroup:internet alone would open every
+        // port on it to every node allowed to use exit nodes. The VCN stays
+        // reachable only through its own grants. The homelab's public IPv6
+        // prefix is DHCPv6-assigned and changes, so it is never listed.
+        "ipset:internet": [
+            "add autogroup:internet",
+            "remove ipset:pubsub--wahlecloud--oraclevcn--com",
+        ],
         // Global DNS resolver (homelab). Every device sends its queries here,
         // since "Override DNS servers" is on (see dns.json).
         "ipset:pihole--regulad--internal": [
@@ -122,7 +131,7 @@
             // Every member's devices may use Mullvad exit nodes. Each device
             // takes a slot of the Mullvad add-on (five per license), handed
             // out as devices connect; devices beyond that get no Mullvad.
-            // Using them also takes an autogroup:internet grant.
+            // Using them also takes an internet grant (ipset:internet).
             "target": ["autogroup:member"],
             "attr":   ["mullvad"],
         },
@@ -189,15 +198,15 @@
             // its own it likely excludes Mullvad's exit nodes, which aren't
             // tag:autoexit.
             "src": ["autogroup:member"],
-            "dst": ["autogroup:internet"],
+            "dst": ["ipset:internet"],
             "via": ["tag:autoexit"],
             "ip":  ["*"],
         },
         {
             // Every node may use any exit node (Mullvad's too, for devices
-            // with the mullvad attribute).
+            // with the mullvad attribute), for the internet minus the VCN.
             "src": ["*"],
-            "dst": ["autogroup:internet"],
+            "dst": ["ipset:internet"],
             "ip":  ["*"],
         },
         {
@@ -309,9 +318,11 @@
     "tests": [
         {
             // A tailnet node with no grant of its own gets only what every
-            // node gets: DNS and the web entry point.
+            // node gets: DNS, the web entry point, and the internet minus the
+            // VCN.
             "src": "bogus--tail11540--ts--net",
             "accept": [
+                "[2606:4700:4700::1111]:443",                  // internet (Cloudflare)
                 "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
                 "[fd83:b84c:aa57:1:be24:11ff:fe08:e4e8]:53",   // arawi
                 "[2603:c020:4016:ae50:0:efc0:c547:1a01]:53",   // VCN edge router
@@ -335,6 +346,7 @@
         {
             "src": "bogus--tail11540--ts--net-v4",
             "accept": [
+                "1.1.1.1:443",                                 // internet (Cloudflare)
                 "10.23.2.41:53",                               // pihole
                 "10.23.0.254:53",                              // arawi
                 "10.131.80.239:53",                            // VCN edge router
