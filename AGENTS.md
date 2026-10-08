@@ -52,7 +52,10 @@ The policy's `tests` assert, per principal, what it must reach and what it
 must not; Tailscale rejects any policy that fails one. Tests can't reference
 IP sets, so their destinations are literal addresses (IPv6 bracketed, e.g.
 `[fd83::1]:443`): when a machine's address changes, update its tests too.
-Site devices are tested through the test-only `bogus--*` hosts. When you add
+Site devices are tested through the test-only `bogus--*` hosts. A tag
+source matches the every-node (`*`) grants only over IPv4 in tests, so check
+those grants over IPv6 from `bogus--tail11540--ts--net`, not from a tag.
+When you add
 a principal or a grant, add tests for it, including denies for ports it
 must not reach (SSH, NetBIOS, SMB, AFP, lockdownd).
 

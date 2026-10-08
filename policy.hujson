@@ -112,6 +112,10 @@
         // Oracle VCN.
         "bogus--pubsub--wahlecloud--oraclevcn--com":    "2603:c020:4016:ae50:ffff:ffff:ffff:ffff",
         "bogus--pubsub--wahlecloud--oraclevcn--com-v4": "10.131.80.254",
+        // Tailnet (Tailscale's fd7a:115c:a1e0::/48 and 100.64.0.0/10): a node
+        // with no grant of its own.
+        "bogus--tail11540--ts--net":                    "fd7a:115c:a1e0:ffff:ffff:ffff:ffff:ffff",
+        "bogus--tail11540--ts--net-v4":                 "100.127.255.254",
     },
     "nodeAttrs": [
         {
@@ -296,7 +300,60 @@
     // when a machine's address changes, update it here too. Deny lists probe
     // SSH (22), NetBIOS (139), SMB (445), AFP (548) and lockdownd (62078).
     // Without "proto", a test checks TCP and UDP.
+    //
+    // A tag source only matches the every-node ("*") grants over IPv4 in
+    // tests (the test runner matches "*" by address and seems to give a tag
+    // only an IPv4 one), though real tagged devices match over both. So tag
+    // tests check those grants over IPv4, and the bogus tailnet host checks
+    // them over IPv6 and IPv4.
     "tests": [
+        {
+            // A tailnet node with no grant of its own gets only what every
+            // node gets: DNS and the web entry point.
+            "src": "bogus--tail11540--ts--net",
+            "accept": [
+                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
+                "[fd83:b84c:aa57:1:be24:11ff:fe08:e4e8]:53",   // arawi
+                "[2603:c020:4016:ae50:0:efc0:c547:1a01]:53",   // VCN edge router
+                "[fd7a:115c:a1e0::8138:4c71]:53",              // ncsusplitt
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:443",  // ingress, HTTPS
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:80",   // ingress, HTTP
+            ],
+            "deny": [
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:22",   // ingress, SSH
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:445",  // ingress, SMB
+                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:80",   // pihole, web UI
+                "[fd83:b84c:aa57:1:be24:11ff:fe5d:be75]:8096", // aboriginal, Jellyfin
+                "[fd7a:115c:a1e0::9701:a814]:62078",           // aboriginal (tailnet), lockdownd
+                "[fd83:b84c:aa57:1:be24:11ff:fe83:464b]:9981", // tvheadend
+                "tag:server:22",
+                "tag:iot:62078",
+                "bogus--regulad--internal:445",
+                "bogus--pubsub--wahlecloud--oraclevcn--com:548",
+            ],
+        },
+        {
+            "src": "bogus--tail11540--ts--net-v4",
+            "accept": [
+                "10.23.2.41:53",                               // pihole
+                "10.23.0.254:53",                              // arawi
+                "10.131.80.239:53",                            // VCN edge router
+                "100.123.76.112:53",                           // ncsusplitt
+                "cr1000b--regulad-verizon-livingston--internal:53",
+                "10.23.2.31:443",                              // ingress, HTTPS
+            ],
+            "deny": [
+                "10.23.2.31:22",                               // ingress, SSH
+                "10.23.2.41:139",                              // pihole, NetBIOS
+                "10.23.2.145:8096",                            // aboriginal, Jellyfin
+                "100.70.168.20:548",                           // aboriginal (tailnet), AFP
+                "10.23.2.72:9982",                             // tvheadend
+                "tag:server:22",
+                "tag:iot:62078",
+                "bogus--regulad--internal-v4:445",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
+            ],
+        },
         {
             // Admin devices reach everything.
             "src": "parkeredwardwahle2017@gmail.com",
@@ -389,15 +446,11 @@
             "accept": [
                 "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:22",   // ingress, SSH
                 "10.23.2.31:22",                               // ingress, SSH
-                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:443",  // ingress, HTTPS
+                "10.23.2.31:443",                              // ingress, HTTPS
                 "10.23.2.31:80",                               // ingress, HTTP
-                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
                 "10.23.2.41:53",                               // pihole
-                "[fd83:b84c:aa57:1:be24:11ff:fe08:e4e8]:53",   // arawi
                 "10.23.0.254:53",                              // arawi
-                "[2603:c020:4016:ae50:0:efc0:c547:1a01]:53",   // VCN edge router
                 "10.131.80.239:53",                            // VCN edge router
-                "[fd7a:115c:a1e0::8138:4c71]:53",              // ncsusplitt
                 "100.123.76.112:53",                           // ncsusplitt
                 "cr1000b--regulad-verizon-livingston--internal:53",
             ],
@@ -431,15 +484,11 @@
                 "100.70.168.20:8123",                          // aboriginal (tailnet), HA
                 "[fd83:b84c:aa57:1:be24:11ff:fe83:464b]:9981", // tvheadend, HTTP
                 "10.23.2.72:9982",                             // tvheadend, HTSP
-                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:443",  // ingress, HTTPS
+                "10.23.2.31:443",                              // ingress, HTTPS
                 "10.23.2.31:80",                               // ingress, HTTP
-                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
                 "10.23.2.41:53",                               // pihole
-                "[fd83:b84c:aa57:1:be24:11ff:fe08:e4e8]:53",   // arawi
                 "10.23.0.254:53",                              // arawi
-                "[2603:c020:4016:ae50:0:efc0:c547:1a01]:53",   // VCN edge router
                 "10.131.80.239:53",                            // VCN edge router
-                "[fd7a:115c:a1e0::8138:4c71]:53",              // ncsusplitt
                 "100.123.76.112:53",                           // ncsusplitt
                 "cr1000b--regulad-verizon-livingston--internal:53",
             ],
@@ -466,7 +515,6 @@
             "src": "tag:iot",
             "proto": "udp",
             "accept": [
-                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
                 "10.23.2.41:53",                               // pihole
             ],
             "deny": [
@@ -478,9 +526,8 @@
             // Relays have no grant of their own: only what every node gets.
             "src": "tag:relay",
             "accept": [
-                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
                 "10.23.2.41:53",                               // pihole
-                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:443",  // ingress, HTTPS
+                "10.23.2.31:443",                              // ingress, HTTPS
             ],
             "deny": [
                 "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:22",   // ingress, SSH
@@ -497,7 +544,6 @@
             // gets.
             "src": "tag:autorouter",
             "accept": [
-                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
                 "10.23.2.41:53",                               // pihole
                 "10.23.2.31:80",                               // ingress, HTTP
             ],
