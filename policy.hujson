@@ -1,0 +1,44 @@
+{
+    "tagOwners": {
+        "tag:server":     ["autogroup:admin"],
+        "tag:autorouter": ["autogroup:admin"],
+        "tag:relay":      ["autogroup:admin"],
+        "tag:autoexit":   ["autogroup:admin"],
+        "tag:ci-kodi":    [],
+    },
+    "nodeAttrs": [
+        {
+            "target": ["autogroup:members"],
+            "attr":   ["mullvad"],
+        },
+        {
+            "target": ["*"],
+            "attr":   ["magicdns-aaaa"],
+        },
+        {
+            "target": ["autogroup:members"],
+            "attr": ["funnel"],
+        },
+    ],
+    "randomizeClientPort": true,
+    "grants": [
+        {
+            "src": ["*"],
+            "dst": ["tag:relay"],
+            "app": {"tailscale.com/cap/relay": []},
+        },
+        {
+            "src": ["*"],
+            "dst": ["*"],
+            "ip":  ["*"],
+        },
+    ],
+    "autoApprovers": {
+        "exitNode": ["tag:autoexit"],
+
+        "routes": {
+            "0.0.0.0/0": ["tag:autorouter"],
+            "::/0":      ["tag:autorouter"],
+        },
+    },
+}

@@ -1,0 +1,12 @@
+# Repository settings, applied by the Probot "Settings" app.
+# https://github.com/repository-settings/app
+
+repository:
+  name: tailscale-acls
+  description: "regulad's Tailscale policy"
+  topics: tailscale, tailnet, acl, gitops, hujson
+
+  # Tailnet policy files can carry PII (user emails in groups/tests).
+  private: true
+
+  default_branch: master
