@@ -1,0 +1,58 @@
+{
+  "nameservers": [
+    {
+      "address": "10.23.2.41"
+    },
+    {
+      "address": "fd83:b84c:aa57:1:be24:11ff:fec8:9b09"
+    }
+  ],
+  "splitDNS": {
+    "ncstate.net": [
+      {
+        "address": "100.123.76.112"
+      },
+      {
+        "address": "fd7a:115c:a1e0::8138:4c71"
+      }
+    ],
+    "ncsu.edu": [
+      {
+        "address": "100.123.76.112"
+      },
+      {
+        "address": "fd7a:115c:a1e0::8138:4c71"
+      }
+    ],
+    "pubsub.wahlecloud.oraclevcn.com": [
+      {
+        "address": "10.131.80.239"
+      },
+      {
+        "address": "2603:c020:4016:ae50:0:efc0:c547:1a01"
+      }
+    ],
+    "regulad-verizon-livingston.internal": [
+      {
+        "address": "10.23.0.1"
+      }
+    ],
+    "regulad.internal": [
+      {
+        "address": "10.23.0.254"
+      },
+      {
+        "address": "fd83:b84c:aa57:1:be24:11ff:fe08:e4e8"
+      }
+    ]
+  },
+  "searchPaths": [
+    "regulad.internal",
+    "pubsub.wahlecloud.oraclevcn.com",
+    "sd.ncsu.edu"
+  ],
+  "preferences": {
+    "overrideLocalDNS": true,
+    "magicDNS": true
+  }
+}

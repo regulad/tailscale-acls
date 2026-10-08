@@ -38,3 +38,16 @@ Keep Git commit signing enabled; never disable it.
 - Names derived from a domain spell each `.` as `--`; a single `-` is an
   ordinary separator (`tag:edge-regulad--internal` is the edge router for
   `regulad.internal`).
+- IPv6 is first class in this network; IPv4 is secondary. Every machine and
+  subnet is listed with its IPv6 address(es), IPv6 first. Don't add an
+  IPv4-only entry without finding the IPv6 counterpart.
+- Name a single-address machine in `hosts`; anything with several addresses
+  (a site's subnets, a machine with IPv6 and IPv4) is an `ipsets` entry.
+
+## DNS
+
+`dns.json` mirrors the tailnet's DNS configuration, in the shape of
+`GET /api/v2/tailnet/-/dns/configuration`. Nothing applies it yet: change
+DNS in the admin console and update `dns.json` to match. Every global or
+split-DNS nameserver must be reachable through a grant, or DNS breaks for
+the nodes that can't reach it.
