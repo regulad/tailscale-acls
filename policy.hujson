@@ -19,7 +19,7 @@
         "tag:relay":      ["autogroup:admin"],
         // Exit nodes, auto-approved under "autoApprovers".
         "tag:autoexit":   ["autogroup:admin"],
-        "tag:ci-kodi":    [],
+        "tag:ci-kodi":    ["autogroup:admin"],
         // Edge routers, one tag per router so each site's routes are bound to
         // exactly one node. They run with SNAT off, so devices behind them
         // keep their own addresses on the tailnet.
@@ -128,6 +128,8 @@
 
         "routes": {
             // Each site's subnets are auto-approved for its own edge router.
+            // Route keys must be literal CIDRs (IP sets aren't accepted
+            // here), so keep these in sync with the site's IP set.
             "10.23.0.0/20":             ["tag:edge-regulad--internal"],
             "fd83:b84c:aa57:1::/64":    ["tag:edge-regulad--internal"],
             "10.131.80.0/24":           ["tag:edge-pubsub--wahlecloud--oraclevcn--com"],
