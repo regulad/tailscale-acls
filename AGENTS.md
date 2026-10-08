@@ -34,7 +34,8 @@ Keep Git commit signing enabled; never disable it.
   or removing the grant that gives it. Don't reintroduce a `* -> *` grant.
 - Before removing or narrowing a grant, check who else relies on it; a
   principal with no grant loses all access.
-- Comment every tag, grant, nodeAttr and autoApprover with what it is for.
+- Comment every tag, grant, nodeAttr and autoApprover with what it is for,
+  and every port in a grant's `ip` list with the service it serves.
 - Names derived from a domain spell each `.` as `--`; a single `-` is an
   ordinary separator (`tag:edge-regulad--internal` is the edge router for
   `regulad.internal`).

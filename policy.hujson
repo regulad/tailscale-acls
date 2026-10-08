@@ -20,6 +20,10 @@
         // GitHub Actions runners that publish kodi-plugins; may reach only
         // the publish target (and the DNS resolvers).
         "tag:ci-kodi":    ["autogroup:admin"],
+        // IoT devices: restricted, single-purpose devices. They may reach only
+        // the services they exist for, plus what every node gets (DNS, exit
+        // nodes, the web entry point).
+        "tag:iot":        ["autogroup:admin"],
         // Edge routers, one tag per router so each site's routes are bound to
         // exactly one node. They run with SNAT off, so devices behind them
         // keep their own addresses on the tailnet.
@@ -65,10 +69,28 @@
             "fd7a:115c:a1e0::8138:4c71",
             "100.123.76.112",
         ],
-        // kodi-plugins publish target (homelab, fixed addresses).
+        // Ingress host (homelab, fixed addresses): the web entry point for
+        // every node, and the kodi-plugins publish target.
         "ipset:ingress--regulad--internal": [
             "fd83:b84c:aa57:1:be24:11ff:fe4a:25fa",
             "10.23.2.31",
+        ],
+        // Jellyfin and Home Assistant host, by its homelab address. The same
+        // machine as ipset:aboriginal--tail11540--ts--net, kept separate.
+        "ipset:aboriginal--regulad--internal": [
+            "fd83:b84c:aa57:1:be24:11ff:fe5d:be75",
+            "10.23.2.145",
+        ],
+        // Jellyfin and Home Assistant host, by its Tailscale address. The
+        // same machine as ipset:aboriginal--regulad--internal, kept separate.
+        "ipset:aboriginal--tail11540--ts--net": [
+            "fd7a:115c:a1e0::9701:a814",
+            "100.70.168.20",
+        ],
+        // TVHeadend host (homelab).
+        "ipset:tvheadend--regulad--internal": [
+            "fd83:b84c:aa57:1:be24:11ff:fe83:464b",
+            "10.23.2.72",
         ],
     },
     // Single-address machines, named after their domain ("--" stands for
@@ -132,14 +154,29 @@
         },
         {
             // Every member reaches both sites' subnets through the edge
-            // routers, and may use exit nodes (Mullvad's included).
+            // routers.
             "src": ["autogroup:member"],
             "dst": [
                 "ipset:regulad--internal",
                 "ipset:pubsub--wahlecloud--oraclevcn--com",
-                "autogroup:internet",
             ],
             "ip":  ["*"],
+        },
+        {
+            // Every node may use exit nodes (Mullvad's too, for devices with
+            // the mullvad attribute).
+            "src": ["*"],
+            "dst": ["autogroup:internet"],
+            "ip":  ["*"],
+        },
+        {
+            // Every node may reach the web entry point.
+            "src": ["*"],
+            "dst": ["ipset:ingress--regulad--internal"],
+            "ip":  [
+                "tcp:80",  // HTTP
+                "tcp:443", // HTTPS
+            ],
         },
         {
             // Every node may query every resolver in dns.json, so DNS keeps
@@ -156,14 +193,43 @@
                 "ipset:ncsusplitt--tail11540--ts--net",
                 "cr1000b--regulad-verizon-livingston--internal",
             ],
-            "ip":  ["udp:53", "tcp:53"],
+            "ip":  [
+                "udp:53", // DNS
+                "tcp:53", // DNS
+            ],
         },
         {
             // kodi-plugins publisher: SSH to the publish target, nothing
             // else (DNS comes from the resolvers grant above).
             "src": ["tag:ci-kodi"],
             "dst": ["ipset:ingress--regulad--internal"],
-            "ip":  ["tcp:22"],
+            "ip":  [
+                "tcp:22", // SSH (scp)
+            ],
+        },
+        {
+            // IoT devices: Jellyfin and Home Assistant, by either of the
+            // host's names.
+            "src": ["tag:iot"],
+            "dst": [
+                "ipset:aboriginal--regulad--internal",
+                "ipset:aboriginal--tail11540--ts--net",
+            ],
+            "ip":  [
+                "tcp:8096", // Jellyfin HTTP
+                "tcp:8920", // Jellyfin HTTPS
+                "udp:7359", // Jellyfin client discovery
+                "tcp:8123", // Home Assistant HTTP
+            ],
+        },
+        {
+            // IoT devices: TVHeadend.
+            "src": ["tag:iot"],
+            "dst": ["ipset:tvheadend--regulad--internal"],
+            "ip":  [
+                "tcp:9981", // TVHeadend HTTP
+                "tcp:9982", // TVHeadend HTSP
+            ],
         },
         {
             // Every node may use the peer relays to help establish
