@@ -46,6 +46,16 @@ Keep Git commit signing enabled; never disable it.
 - Name a single-address machine in `hosts`; anything with several addresses
   (a site's subnets, a machine with IPv6 and IPv4) is an `ipsets` entry.
 
+## Tests
+
+The policy's `tests` assert, per principal, what it must reach and what it
+must not; Tailscale rejects any policy that fails one. Tests can't reference
+IP sets, so their destinations are literal addresses (IPv6 bracketed, e.g.
+`[fd83::1]:443`): when a machine's address changes, update its tests too.
+Site devices are tested through the test-only `bogus--*` hosts. When you add
+a principal or a grant, add tests for it, including denies for ports it
+must not reach (SSH, NetBIOS, SMB, AFP, lockdownd).
+
 ## DNS
 
 `dns.json` mirrors the tailnet's DNS configuration, in the shape of

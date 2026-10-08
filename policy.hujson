@@ -99,6 +99,19 @@
         // LEGACY host: IPv4 only. Split-DNS resolver for
         // regulad-verizon-livingston.internal (homelab).
         "cr1000b--regulad-verizon-livingston--internal": "10.23.0.1",
+
+        // Test-only addresses, used as sources in "tests" (which can't
+        // reference IP sets); no machine has them. Each sets as many bits as
+        // its subnet allows without being the broadcast address: IPv4 stops
+        // one short of it, and IPv6 has no broadcast (and the all-ones
+        // interface ID isn't reserved, RFC 5453). The plain name is IPv6;
+        // -v4 is the IPv4 counterpart.
+        // Homelab.
+        "bogus--regulad--internal":                     "fd83:b84c:aa57:1:ffff:ffff:ffff:ffff",
+        "bogus--regulad--internal-v4":                  "10.23.15.254",
+        // Oracle VCN.
+        "bogus--pubsub--wahlecloud--oraclevcn--com":    "2603:c020:4016:ae50:ffff:ffff:ffff:ffff",
+        "bogus--pubsub--wahlecloud--oraclevcn--com-v4": "10.131.80.254",
     },
     "nodeAttrs": [
         {
@@ -276,4 +289,226 @@
             "0.0.0.0/0": ["tag:autorouter"],
         },
     },
+    // Regression tests: Tailscale runs them on every apply and rejects the
+    // policy if one fails. Each principal asserts what it must reach and,
+    // where it is restricted, what it must not. Tests can't reference IP
+    // sets, so destinations are literal addresses (IPv6 first, bracketed);
+    // when a machine's address changes, update it here too. Deny lists probe
+    // SSH (22), NetBIOS (139), SMB (445), AFP (548) and lockdownd (62078).
+    // Without "proto", a test checks TCP and UDP.
+    "tests": [
+        {
+            // Admin devices reach everything.
+            "src": "parkeredwardwahle2017@gmail.com",
+            "accept": [
+                "tag:server:22",
+                "tag:iot:62078",
+                "tag:edge-regulad--internal:22",
+                "bogus--regulad--internal:445",
+                "bogus--regulad--internal-v4:445",
+                "bogus--pubsub--wahlecloud--oraclevcn--com:548",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
+            ],
+        },
+        {
+            // Servers reach everything.
+            "src": "tag:server",
+            "accept": [
+                "tag:iot:62078",
+                "tag:edge-pubsub--wahlecloud--oraclevcn--com:22",
+                "bogus--regulad--internal:445",
+                "bogus--regulad--internal-v4:445",
+                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
+            ],
+        },
+        {
+            // Exit nodes reach everything.
+            "src": "tag:autoexit",
+            "accept": [
+                "tag:server:22",
+                "bogus--regulad--internal:139",
+                "bogus--regulad--internal-v4:139",
+                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
+            ],
+        },
+        {
+            // Homelab edge router reaches the tailnet and the other site.
+            "src": "tag:edge-regulad--internal",
+            "accept": [
+                "tag:server:22",
+                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
+            ],
+        },
+        {
+            // VCN edge router reaches the tailnet and the other site.
+            "src": "tag:edge-pubsub--wahlecloud--oraclevcn--com",
+            "accept": [
+                "tag:server:22",
+                "bogus--regulad--internal:445",
+                "bogus--regulad--internal-v4:445",
+            ],
+        },
+        {
+            // Homelab devices (SNAT off) reach the tailnet and the VCN.
+            "src": "bogus--regulad--internal",
+            "accept": [
+                "tag:server:22",
+                "tag:iot:62078",
+                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
+            ],
+        },
+        {
+            "src": "bogus--regulad--internal-v4",
+            "accept": [
+                "tag:server:22",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
+            ],
+        },
+        {
+            // VCN devices (SNAT off) reach the tailnet and the homelab.
+            "src": "bogus--pubsub--wahlecloud--oraclevcn--com",
+            "accept": [
+                "tag:server:22",
+                "bogus--regulad--internal:445",
+            ],
+        },
+        {
+            "src": "bogus--pubsub--wahlecloud--oraclevcn--com-v4",
+            "accept": [
+                "tag:server:22",
+                "bogus--regulad--internal-v4:445",
+            ],
+        },
+        {
+            // kodi-plugins publisher: SSH and web on ingress, DNS, nothing
+            // else.
+            "src": "tag:ci-kodi",
+            "accept": [
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:22",   // ingress, SSH
+                "10.23.2.31:22",                               // ingress, SSH
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:443",  // ingress, HTTPS
+                "10.23.2.31:80",                               // ingress, HTTP
+                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
+                "10.23.2.41:53",                               // pihole
+                "[fd83:b84c:aa57:1:be24:11ff:fe08:e4e8]:53",   // arawi
+                "10.23.0.254:53",                              // arawi
+                "[2603:c020:4016:ae50:0:efc0:c547:1a01]:53",   // VCN edge router
+                "10.131.80.239:53",                            // VCN edge router
+                "[fd7a:115c:a1e0::8138:4c71]:53",              // ncsusplitt
+                "100.123.76.112:53",                           // ncsusplitt
+                "cr1000b--regulad-verizon-livingston--internal:53",
+            ],
+            "deny": [
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:445",  // ingress, SMB
+                "10.23.2.31:548",                              // ingress, AFP
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:62078", // ingress, lockdownd
+                "[fd83:b84c:aa57:1:be24:11ff:fe5d:be75]:8096", // aboriginal, Jellyfin
+                "10.23.2.145:22",                              // aboriginal, SSH
+                "[fd7a:115c:a1e0::9701:a814]:8123",            // aboriginal (tailnet), HA
+                "10.23.2.72:9981",                             // tvheadend
+                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:22",   // pihole, SSH
+                "tag:server:22",
+                "tag:iot:62078",
+                "bogus--regulad--internal:445",
+                "bogus--regulad--internal-v4:139",
+                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
+            ],
+        },
+        {
+            // IoT devices: their services, the web entry point, DNS, nothing
+            // else.
+            "src": "tag:iot",
+            "accept": [
+                "[fd83:b84c:aa57:1:be24:11ff:fe5d:be75]:8096", // aboriginal, Jellyfin HTTP
+                "10.23.2.145:8920",                            // aboriginal, Jellyfin HTTPS
+                "[fd83:b84c:aa57:1:be24:11ff:fe5d:be75]:8123", // aboriginal, HA
+                "[fd7a:115c:a1e0::9701:a814]:8096",            // aboriginal (tailnet), Jellyfin HTTP
+                "100.70.168.20:8920",                          // aboriginal (tailnet), Jellyfin HTTPS
+                "100.70.168.20:8123",                          // aboriginal (tailnet), HA
+                "[fd83:b84c:aa57:1:be24:11ff:fe83:464b]:9981", // tvheadend, HTTP
+                "10.23.2.72:9982",                             // tvheadend, HTSP
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:443",  // ingress, HTTPS
+                "10.23.2.31:80",                               // ingress, HTTP
+                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
+                "10.23.2.41:53",                               // pihole
+                "[fd83:b84c:aa57:1:be24:11ff:fe08:e4e8]:53",   // arawi
+                "10.23.0.254:53",                              // arawi
+                "[2603:c020:4016:ae50:0:efc0:c547:1a01]:53",   // VCN edge router
+                "10.131.80.239:53",                            // VCN edge router
+                "[fd7a:115c:a1e0::8138:4c71]:53",              // ncsusplitt
+                "100.123.76.112:53",                           // ncsusplitt
+                "cr1000b--regulad-verizon-livingston--internal:53",
+            ],
+            "deny": [
+                "[fd83:b84c:aa57:1:be24:11ff:fe5d:be75]:22",   // aboriginal, SSH
+                "10.23.2.145:445",                             // aboriginal, SMB
+                "[fd7a:115c:a1e0::9701:a814]:548",             // aboriginal (tailnet), AFP
+                "100.70.168.20:62078",                         // aboriginal (tailnet), lockdownd
+                "[fd83:b84c:aa57:1:be24:11ff:fe83:464b]:22",   // tvheadend, SSH
+                "10.23.2.72:139",                              // tvheadend, NetBIOS
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:22",   // ingress, SSH
+                "10.23.2.31:445",                              // ingress, SMB
+                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:80",   // pihole, web UI
+                "tag:server:22",
+                "tag:iot:62078",
+                "bogus--regulad--internal:445",
+                "bogus--regulad--internal-v4:548",
+                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
+            ],
+        },
+        {
+            // IoT over UDP: DNS yes, Jellyfin client discovery no.
+            "src": "tag:iot",
+            "proto": "udp",
+            "accept": [
+                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
+                "10.23.2.41:53",                               // pihole
+            ],
+            "deny": [
+                "[fd83:b84c:aa57:1:be24:11ff:fe5d:be75]:7359", // aboriginal, Jellyfin discovery
+                "100.70.168.20:7359",                          // aboriginal (tailnet), Jellyfin discovery
+            ],
+        },
+        {
+            // Relays have no grant of their own: only what every node gets.
+            "src": "tag:relay",
+            "accept": [
+                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
+                "10.23.2.41:53",                               // pihole
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:443",  // ingress, HTTPS
+            ],
+            "deny": [
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:22",   // ingress, SSH
+                "[fd83:b84c:aa57:1:be24:11ff:fe5d:be75]:8096", // aboriginal, Jellyfin
+                "tag:server:22",
+                "tag:iot:62078",
+                "bogus--regulad--internal:445",
+                "bogus--regulad--internal-v4:548",
+                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
+            ],
+        },
+        {
+            // tag:autorouter has no grant of its own: only what every node
+            // gets.
+            "src": "tag:autorouter",
+            "accept": [
+                "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
+                "10.23.2.41:53",                               // pihole
+                "10.23.2.31:80",                               // ingress, HTTP
+            ],
+            "deny": [
+                "10.23.2.31:22",                               // ingress, SSH
+                "tag:server:22",
+                "tag:iot:62078",
+                "bogus--regulad--internal:139",
+                "bogus--regulad--internal-v4:445",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
+            ],
+        },
+    ],
 }
