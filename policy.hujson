@@ -102,7 +102,10 @@
     },
     "nodeAttrs": [
         {
-            // User-owned devices may use Mullvad exit nodes.
+            // Every member's devices may use Mullvad exit nodes. Each device
+            // takes a slot of the Mullvad add-on (five per license), handed
+            // out as devices connect; devices beyond that get no Mullvad.
+            // Using them also takes an autogroup:internet grant.
             "target": ["autogroup:member"],
             "attr":   ["mullvad"],
         },
@@ -163,8 +166,19 @@
             "ip":  ["*"],
         },
         {
-            // Every node may use exit nodes (Mullvad's too, for devices with
-            // the mullvad attribute).
+            // Members may use the tailnet's own exit nodes (tag:autoexit).
+            // Redundant while the grant below lets every node use any exit
+            // node; kept so narrowing that grant doesn't cut members off. On
+            // its own it likely excludes Mullvad's exit nodes, which aren't
+            // tag:autoexit.
+            "src": ["autogroup:member"],
+            "dst": ["autogroup:internet"],
+            "via": ["tag:autoexit"],
+            "ip":  ["*"],
+        },
+        {
+            // Every node may use any exit node (Mullvad's too, for devices
+            // with the mullvad attribute).
             "src": ["*"],
             "dst": ["autogroup:internet"],
             "ip":  ["*"],
