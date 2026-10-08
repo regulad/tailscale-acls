@@ -12,6 +12,12 @@ permissions:
   contents: read
   id-token: write
 
+# One run per ref at a time; a newer push replaces any queued run, so an
+# older policy can never be applied after a newer one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   acls:
     runs-on: ubuntu-latest
