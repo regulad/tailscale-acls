@@ -1,11 +1,9 @@
 // regulad's tailnet policy. Applied to the tailnet by
 // .github/workflows/tailscale.yml on every push to master.
 //
-// Access model: the catch-all grant at the end of "grants" keeps the tailnet
-// fully open. Grants are allow-only and unioned (there is no deny and no
-// ordering), so tightening means narrowing that catch-all. Every principal
-// that must keep full access also gets its own explicit grant, so the
-// catch-all can be removed later without cutting anyone off.
+// Access model: whitelist. Nothing is reachable unless a grant below allows
+// it. Grants are allow-only and unioned (there is no deny and no ordering),
+// so restricting access means narrowing or removing the grant that gives it.
 {
     "tagOwners": {
         // Generic always-on machines that may host services or reach other
@@ -19,6 +17,7 @@
         "tag:relay":      ["autogroup:admin"],
         // Exit nodes, auto-approved under "autoApprovers".
         "tag:autoexit":   ["autogroup:admin"],
+        // GitHub Actions runners that publish kodi-plugins.
         "tag:ci-kodi":    ["autogroup:admin"],
         // Edge routers, one tag per router so each site's routes are bound to
         // exactly one node. They run with SNAT off, so devices behind them
@@ -97,11 +96,12 @@
         },
         {
             // Every member reaches both sites' subnets through the edge
-            // routers.
+            // routers, and may use exit nodes (Mullvad's included).
             "src": ["autogroup:member"],
             "dst": [
                 "ipset:regulad--internal",
                 "ipset:pubsub--wahlecloud--oraclevcn--com",
+                "autogroup:internet",
             ],
             "ip":  ["*"],
         },
@@ -112,13 +112,6 @@
             "src": ["*"],
             "dst": ["tag:relay"],
             "app": {"tailscale.com/cap/relay": []},
-        },
-        {
-            // Catch-all: everything reaches everything. Makes the explicit
-            // grants above redundant until it is narrowed or removed.
-            "src": ["*"],
-            "dst": ["*"],
-            "ip":  ["*"],
         },
     ],
     "autoApprovers": {

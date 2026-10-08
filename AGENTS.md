@@ -28,12 +28,12 @@ Keep Git commit signing enabled; never disable it.
 
 ## Policy conventions
 
-- Grants are allow-only. Tailscale has no deny rules and no rule priority;
-  overlapping grants are unioned. The catch-all `* -> *` grant keeps the
-  tailnet open, so tightening means narrowing or removing it.
-- Any principal meant to keep full access gets its own explicit grant, even
-  while the catch-all makes it redundant, so the catch-all can later be
-  removed (moving to a whitelist) without cutting anyone off.
+- The policy is a whitelist: nothing is reachable unless a grant allows it.
+  Grants are allow-only (Tailscale has no deny rules and no rule priority)
+  and overlapping grants are unioned, so restricting access means narrowing
+  or removing the grant that gives it. Don't reintroduce a `* -> *` grant.
+- Before removing or narrowing a grant, check who else relies on it; a
+  principal with no grant loses all access.
 - Comment every tag, grant, nodeAttr and autoApprover with what it is for.
 - Names derived from a domain spell each `.` as `--`; a single `-` is an
   ordinary separator (`tag:edge-regulad--internal` is the edge router for
