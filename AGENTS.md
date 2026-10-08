@@ -33,3 +33,6 @@ Keep Git commit signing enabled; never disable it.
   while the catch-all makes it redundant, so the catch-all can later be
   removed (moving to a whitelist) without cutting anyone off.
 - Comment every tag, grant, nodeAttr and autoApprover with what it is for.
+- Names derived from a domain spell each `.` as `--`; a single `-` is an
+  ordinary separator (`tag:edge-regulad--internal` is the edge router for
+  `regulad.internal`).

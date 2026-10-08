@@ -11,6 +11,8 @@
         // Generic always-on machines that may host services or reach other
         // services over the tailnet.
         "tag:server":     ["autogroup:admin"],
+        // Separate testing tag, left as-is. Its auto-approver (see
+        // "autoApprovers") covers every subnet route.
         "tag:autorouter": ["autogroup:admin"],
         // Peer relays: nodes allowed to advertise themselves as a relay that
         // helps other peers establish connections.
@@ -18,6 +20,28 @@
         // Exit nodes, auto-approved under "autoApprovers".
         "tag:autoexit":   ["autogroup:admin"],
         "tag:ci-kodi":    [],
+        // Edge routers, one tag per router so each site's routes are bound to
+        // exactly one node. They run with SNAT off, so devices behind them
+        // keep their own addresses on the tailnet.
+        // Homelab edge router; serves ipset:regulad--internal.
+        "tag:edge-regulad--internal":                  ["autogroup:admin"],
+        // Oracle VCN edge router; serves
+        // ipset:pubsub--wahlecloud--oraclevcn--com.
+        "tag:edge-pubsub--wahlecloud--oraclevcn--com": ["autogroup:admin"],
+    },
+    // Each site's subnets, named after the site's domain ("--" stands for
+    // ".").
+    "ipsets": {
+        // Homelab subnets.
+        "ipset:regulad--internal": [
+            "10.23.0.0/20",
+            "fd83:b84c:aa57:1::/64",
+        ],
+        // Oracle VCN subnets.
+        "ipset:pubsub--wahlecloud--oraclevcn--com": [
+            "10.131.80.0/24",
+            "2603:c020:4016:ae50::/64",
+        ],
     },
     "nodeAttrs": [
         {
@@ -59,6 +83,29 @@
             "ip":  ["*"],
         },
         {
+            // Edge routers, and the devices behind them (SNAT is off, so they
+            // arrive with their own addresses), reach everything, including
+            // the other site.
+            "src": [
+                "tag:edge-regulad--internal",
+                "tag:edge-pubsub--wahlecloud--oraclevcn--com",
+                "ipset:regulad--internal",
+                "ipset:pubsub--wahlecloud--oraclevcn--com",
+            ],
+            "dst": ["*"],
+            "ip":  ["*"],
+        },
+        {
+            // Every member reaches both sites' subnets through the edge
+            // routers.
+            "src": ["autogroup:member"],
+            "dst": [
+                "ipset:regulad--internal",
+                "ipset:pubsub--wahlecloud--oraclevcn--com",
+            ],
+            "ip":  ["*"],
+        },
+        {
             // Every node may use the peer relays to help establish
             // connections. This grants relay use only, not network access to
             // the relay nodes.
@@ -79,9 +126,16 @@
         // automatically.
         "exitNode": ["tag:autoexit"],
 
-        // Any subnet route advertised by tag:autorouter is approved
-        // automatically (every prefix falls inside these two).
         "routes": {
+            // Each site's subnets are auto-approved for its own edge router.
+            "10.23.0.0/20":             ["tag:edge-regulad--internal"],
+            "fd83:b84c:aa57:1::/64":    ["tag:edge-regulad--internal"],
+            "10.131.80.0/24":           ["tag:edge-pubsub--wahlecloud--oraclevcn--com"],
+            "2603:c020:4016:ae50::/64": ["tag:edge-pubsub--wahlecloud--oraclevcn--com"],
+
+            // Any subnet route advertised by tag:autorouter is approved
+            // automatically (every prefix falls inside these two), the site
+            // subnets above included.
             "0.0.0.0/0": ["tag:autorouter"],
             "::/0":      ["tag:autorouter"],
         },
