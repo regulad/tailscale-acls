@@ -1,41 +1,86 @@
+// regulad's tailnet policy. Applied to the tailnet by
+// .github/workflows/tailscale.yml on every push to master.
+//
+// Access model: the catch-all grant at the end of "grants" keeps the tailnet
+// fully open. Grants are allow-only and unioned (there is no deny and no
+// ordering), so tightening means narrowing that catch-all. Every principal
+// that must keep full access also gets its own explicit grant, so the
+// catch-all can be removed later without cutting anyone off.
 {
     "tagOwners": {
+        // Generic always-on machines that may host services or reach other
+        // services over the tailnet.
         "tag:server":     ["autogroup:admin"],
         "tag:autorouter": ["autogroup:admin"],
+        // Peer relays: nodes allowed to advertise themselves as a relay that
+        // helps other peers establish connections.
         "tag:relay":      ["autogroup:admin"],
+        // Exit nodes, auto-approved under "autoApprovers".
         "tag:autoexit":   ["autogroup:admin"],
         "tag:ci-kodi":    [],
     },
     "nodeAttrs": [
         {
-            "target": ["autogroup:members"],
+            // User-owned devices may use Mullvad exit nodes.
+            "target": ["autogroup:member"],
             "attr":   ["mullvad"],
         },
         {
+            // MagicDNS also answers AAAA (IPv6) queries for tailnet names.
             "target": ["*"],
             "attr":   ["magicdns-aaaa"],
         },
         {
-            "target": ["autogroup:members"],
-            "attr": ["funnel"],
+            // User-owned devices may publish services to the internet with
+            // Funnel.
+            "target": ["autogroup:member"],
+            "attr":   ["funnel"],
         },
     ],
+    // Use a random WireGuard listen port instead of the fixed 41641.
     "randomizeClientPort": true,
     "grants": [
         {
+            // Untagged devices of admin users reach everything.
+            "src": ["autogroup:admin"],
+            "dst": ["*"],
+            "ip":  ["*"],
+        },
+        {
+            // Exit nodes reach everything.
+            "src": ["tag:autoexit"],
+            "dst": ["*"],
+            "ip":  ["*"],
+        },
+        {
+            // Servers reach everything, for now.
+            "src": ["tag:server"],
+            "dst": ["*"],
+            "ip":  ["*"],
+        },
+        {
+            // Every node may use the peer relays to help establish
+            // connections. This grants relay use only, not network access to
+            // the relay nodes.
             "src": ["*"],
             "dst": ["tag:relay"],
             "app": {"tailscale.com/cap/relay": []},
         },
         {
+            // Catch-all: everything reaches everything. Makes the explicit
+            // grants above redundant until it is narrowed or removed.
             "src": ["*"],
             "dst": ["*"],
             "ip":  ["*"],
         },
     ],
     "autoApprovers": {
+        // Exit-node advertisements from tag:autoexit are approved
+        // automatically.
         "exitNode": ["tag:autoexit"],
 
+        // Any subnet route advertised by tag:autorouter is approved
+        // automatically (every prefix falls inside these two).
         "routes": {
             "0.0.0.0/0": ["tag:autorouter"],
             "::/0":      ["tag:autorouter"],
