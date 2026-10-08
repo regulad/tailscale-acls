@@ -1,0 +1,73 @@
+name: Sync Tailscale DNS
+
+on:
+  push:
+    branches: [ "master" ]
+    paths:
+      - dns.json
+      - .github/workflows/dns.yml
+  workflow_dispatch:
+
+# id-token: write lets the job mint a GitHub OIDC token for the Tailscale
+# federated identity (the same one the policy workflow uses, with the dns
+# scope); no long-lived Tailscale secret is stored.
+permissions:
+  contents: read
+  id-token: write
+
+# One run per ref at a time; a newer push replaces any queued run, so an
+# older configuration can never be applied after a newer one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  dns:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check dns.json
+        run: jq -e 'type == "object"' dns.json > /dev/null
+
+      # POST /dns/configuration replaces the whole DNS configuration:
+      # anything dns.json omits is cleared, and omitted preferences
+      # (magicDNS, overrideLocalDNS) default to false.
+      - name: Apply DNS configuration
+        env:
+          TS_OAUTH_ID: ${{ secrets.TS_OAUTH_ID }}
+          TS_AUDIENCE: ${{ secrets.TS_AUDIENCE }}
+          TS_TAILNET: ${{ secrets.TS_TAILNET }}
+        run: |
+          set -euo pipefail
+          api=https://api.tailscale.com/api/v2
+
+          # GitHub OIDC token, exchanged for a short-lived Tailscale API
+          # token the same way gitops-pusher does.
+          id_token=$(curl -fsS -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=$TS_AUDIENCE" | jq -r .value)
+          echo "::add-mask::$id_token"
+          token=$(curl -sS --fail-with-body "$api/oauth/token-exchange" \
+            -d grant_type=authorization_code -d code= \
+            --data-urlencode "client_id=$TS_OAUTH_ID" \
+            --data-urlencode "jwt=$id_token" | jq -r .access_token)
+          echo "::add-mask::$token"
+
+          echo "::group::Changes (live -> dns.json)"
+          curl -sS --fail-with-body -H "Authorization: Bearer $token" \
+            "$api/tailnet/$TS_TAILNET/dns/configuration" | jq -S . > live.json
+          jq -S . dns.json > wanted.json
+          diff -u live.json wanted.json || true
+          echo "::endgroup::"
+
+          curl -sS --fail-with-body -X POST -H "Authorization: Bearer $token" \
+            -H "Content-Type: application/json" --data-binary @dns.json \
+            "$api/tailnet/$TS_TAILNET/dns/configuration" | jq -S . > applied.json
+
+          # The API answers with the configuration now in effect.
+          if ! diff -u wanted.json applied.json; then
+            echo "::warning::Tailscale's applied DNS configuration differs from dns.json (see diff above)."
+          fi
