@@ -46,9 +46,9 @@
     // Single hosts, named after their domain name ("--" stands for ".").
     "hosts": {
         // Principal DNS resolver (homelab).
-        "arawi--regulad--xyz":   "10.23.0.254",
+        "arawi--regulad--internal":   "10.23.0.254",
         // kodi-plugins publish target (homelab, fixed address).
-        "ingress--regulad--xyz": "10.23.2.31",
+        "ingress--regulad--internal": "10.23.2.31",
     },
     "nodeAttrs": [
         {
@@ -117,14 +117,14 @@
             // Every node may query the principal resolver, so DNS keeps
             // working for nodes with no other grant into the homelab.
             "src": ["*"],
-            "dst": ["arawi--regulad--xyz"],
+            "dst": ["arawi--regulad--internal"],
             "ip":  ["udp:53", "tcp:53"],
         },
         {
             // kodi-plugins publisher: SSH to the publish target, nothing
             // else (DNS comes from the resolver grant above).
             "src": ["tag:ci-kodi"],
-            "dst": ["ingress--regulad--xyz"],
+            "dst": ["ingress--regulad--internal"],
             "ip":  ["tcp:22"],
         },
         {
