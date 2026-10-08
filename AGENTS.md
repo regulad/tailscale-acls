@@ -60,9 +60,8 @@ IP sets, so their destinations are literal addresses (IPv6 bracketed, e.g.
 Site devices are tested through the test-only `bogus--*` hosts. A tag
 source matches the every-node (`*`) grants only over IPv4 in tests, so check
 those grants over IPv6 from `bogus--tail11540--ts--net`, not from a tag.
-When you add
-a principal or a grant, add tests for it, including denies for ports it
-must not reach (SSH, NetBIOS, SMB, AFP, lockdownd).
+When you add a principal or a grant, add tests for it, including denies for
+ports it must not reach (SSH, NetBIOS, SMB, AFP, lockdownd).
 
 ## DNS
 
