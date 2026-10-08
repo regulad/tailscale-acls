@@ -48,6 +48,8 @@ Keep Git commit signing enabled; never disable it.
 
 `dns.json` mirrors the tailnet's DNS configuration, in the shape of
 `GET /api/v2/tailnet/-/dns/configuration`. Nothing applies it yet: change
-DNS in the admin console and update `dns.json` to match. Every global or
-split-DNS nameserver must be reachable through a grant, or DNS breaks for
-the nodes that can't reach it.
+DNS in the admin console and update `dns.json` to match. Every node must be
+able to reach the global nameservers ("Override DNS servers" is on, so a
+node that can't loses DNS entirely). The resolvers grant opens them, and
+the sites' split-DNS resolvers, to every node on port 53; add new
+nameservers there.
