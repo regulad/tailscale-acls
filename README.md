@@ -1,14 +1,12 @@
 # regulad's Tailscale policy
 
-## Layout
+This repository contains my Tailscale configuration: both DNS and ACL. It is the sister project to my [`dotfiles`](https://github.com/regulad/dotfiles) configuration.
 
-## Applying changes
+My tailnet includes site-to-site routing, self-hosted and Mullvad-hosted exit nodes, and scoped access via tags. For instance, CI job runners that need to SSH into a specific host are only permitted to access that host (and any DNS resolvers). 
 
-## Policy
+Anthropic LLMs were used to assist with writing test cases and converting policy to newer formats, but the architecture is hand-defined.
 
-## Tests
-
-## DNS
+I hope this repository proves useful to you! Much of the techniques for scoping access here will be very useful if you plan to use Tailscale to allow AI agents restricted access to your personal networks.
 
 ## AGENTS.md
 
@@ -27,5 +25,3 @@ for AI agents but binding on anyone who changes it. It covers:
   test runner's quirks.
 - **DNS:** how `dns.json` is applied, and why every nameserver must stay
   reachable.
-
-## License
