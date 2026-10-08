@@ -17,7 +17,8 @@
         "tag:relay":      ["autogroup:admin"],
         // Exit nodes, auto-approved under "autoApprovers".
         "tag:autoexit":   ["autogroup:admin"],
-        // GitHub Actions runners that publish kodi-plugins.
+        // GitHub Actions runners that publish kodi-plugins; may reach only
+        // the publish target (and the resolver).
         "tag:ci-kodi":    ["autogroup:admin"],
         // Edge routers, one tag per router so each site's routes are bound to
         // exactly one node. They run with SNAT off, so devices behind them
@@ -41,6 +42,13 @@
             "10.131.80.0/24",
             "2603:c020:4016:ae50::/64",
         ],
+    },
+    // Single hosts, named after their domain name ("--" stands for ".").
+    "hosts": {
+        // Principal DNS resolver (homelab).
+        "arawi--regulad--xyz":   "10.23.0.254",
+        // kodi-plugins publish target (homelab, fixed address).
+        "ingress--regulad--xyz": "10.23.2.31",
     },
     "nodeAttrs": [
         {
@@ -104,6 +112,20 @@
                 "autogroup:internet",
             ],
             "ip":  ["*"],
+        },
+        {
+            // Every node may query the principal resolver, so DNS keeps
+            // working for nodes with no other grant into the homelab.
+            "src": ["*"],
+            "dst": ["arawi--regulad--xyz"],
+            "ip":  ["udp:53", "tcp:53"],
+        },
+        {
+            // kodi-plugins publisher: SSH to the publish target, nothing
+            // else (DNS comes from the resolver grant above).
+            "src": ["tag:ci-kodi"],
+            "dst": ["ingress--regulad--xyz"],
+            "ip":  ["tcp:22"],
         },
         {
             // Every node may use the peer relays to help establish
