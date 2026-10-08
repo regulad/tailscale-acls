@@ -3,8 +3,6 @@ name: Sync Tailscale ACLs
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
 
 # id-token: write lets gitops-acl-action mint a GitHub OIDC token for the
 # Tailscale federated identity; no long-lived Tailscale secret is stored.
@@ -27,8 +25,9 @@ jobs:
         with:
           persist-credentials: false
 
+      # Tailscale validates the policy and runs its tests before applying
+      # it; a rejected policy fails this step and leaves the tailnet as is.
       - name: Deploy ACL
-        if: github.event_name == 'push'
         id: deploy-acl
         uses: tailscale/gitops-acl-action@5a4a17f5708e9bf96f4ee915a95e9f83c2eebe1a # v1.5.2
         with:
@@ -36,13 +35,3 @@ jobs:
           audience: ${{ secrets.TS_AUDIENCE }}
           tailnet: ${{ secrets.TS_TAILNET }}
           action: apply
-
-      - name: Test ACL
-        if: github.event_name == 'pull_request'
-        id: test-acl
-        uses: tailscale/gitops-acl-action@5a4a17f5708e9bf96f4ee915a95e9f83c2eebe1a # v1.5.2
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_ID }}
-          audience: ${{ secrets.TS_AUDIENCE }}
-          tailnet: ${{ secrets.TS_TAILNET }}
-          action: test

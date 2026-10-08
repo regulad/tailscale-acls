@@ -6,7 +6,11 @@ repository:
   description: "regulad's Tailscale policy"
   topics: tailscale, tailnet, acl, gitops, hujson
 
-  # Tailnet policy files can carry PII (user emails in groups/tests).
-  private: true
+  has_issues: false
+  has_projects: false
+  has_wiki: false
+  has_downloads: false
+  has_discussions: false
+  # pull requests disabled out-of-band
 
   default_branch: master
