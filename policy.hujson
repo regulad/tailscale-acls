@@ -101,6 +101,15 @@
             "fd83:b84c:aa57:1:be24:11ff:fe83:464b",
             "10.23.2.72",
         ],
+        // aameter (tag:server), by its Tailscale addresses. Shared out to
+        // mark@engagent.dev, who may reach HTTPS on it. Grants for sharees
+        // name it by address, not by tag: a grant from shared users to a tag
+        // is reported not to match, while one to the node's addresses does
+        // (open bug, https://github.com/tailscale/tailscale/issues/14445).
+        "ipset:aameter--tail11540--ts--net": [
+            "fd7a:115c:a1e0::e738:392f",
+            "100.112.57.46",
+        ],
     },
     // Single-address machines, named after their domain ("--" stands for
     // ".").
@@ -270,6 +279,17 @@
             "ip":  [
                 "tcp:9981", // TVHeadend HTTP
                 "tcp:9982", // TVHeadend HTSP
+            ],
+        },
+        {
+            // mark@engagent.dev, who aameter is shared with: HTTPS on aameter
+            // and nothing else. A sharee is also a "*" source, but the
+            // every-node grants point at subnets and exit nodes, which
+            // sharing doesn't carry, so this is all they can reach.
+            "src": ["mark@engagent.dev"],
+            "dst": ["ipset:aameter--tail11540--ts--net"],
+            "ip":  [
+                "tcp:443", // HTTPS
             ],
         },
         {
@@ -566,6 +586,24 @@
                 "bogus--regulad--internal:139",
                 "bogus--regulad--internal-v4:445",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
+            ],
+        },
+        {
+            // mark@engagent.dev (aameter is shared with them): HTTPS on
+            // aameter, nothing else on it.
+            "src": "mark@engagent.dev",
+            "accept": [
+                "[fd7a:115c:a1e0::e738:392f]:443",             // aameter, HTTPS
+                "100.112.57.46:443",                           // aameter, HTTPS
+            ],
+            "deny": [
+                "[fd7a:115c:a1e0::e738:392f]:80",              // aameter, HTTP
+                "100.112.57.46:80",                            // aameter, HTTP
+                "[fd7a:115c:a1e0::e738:392f]:22",              // aameter, SSH
+                "100.112.57.46:139",                           // aameter, NetBIOS
+                "[fd7a:115c:a1e0::e738:392f]:445",             // aameter, SMB
+                "100.112.57.46:548",                           // aameter, AFP
+                "[fd7a:115c:a1e0::e738:392f]:62078",           // aameter, lockdownd
             ],
         },
     ],
