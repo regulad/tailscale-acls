@@ -150,9 +150,12 @@
             "attr":   ["magicdns-aaaa"],
         },
         {
-            // User-owned devices may publish services to the internet with
-            // Funnel.
-            "target": ["autogroup:member"],
+            // Servers and admins' devices may publish services to the
+            // internet with Funnel. Other members' devices may not.
+            "target": [
+                "tag:server",
+                "autogroup:admin",
+            ],
             "attr":   ["funnel"],
         },
     ],
