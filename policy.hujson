@@ -24,6 +24,11 @@
         // the services they exist for, plus what every node gets (DNS, exit
         // nodes, the web entry point).
         "tag:iot":        ["autogroup:admin"],
+        // Tagged nodes that may publish services to the internet with Funnel
+        // (see "nodeAttrs"; admins' devices may without it). It grants no
+        // network access: give a node it alongside the tag that does (e.g.
+        // tag:server).
+        "tag:funnel":     ["autogroup:admin"],
         // Edge routers, one tag per router so each site's routes are bound to
         // exactly one node. They run with SNAT off, so devices behind them
         // keep their own addresses on the tailnet.
@@ -150,10 +155,10 @@
             "attr":   ["magicdns-aaaa"],
         },
         {
-            // Servers and admins' devices may publish services to the
-            // internet with Funnel. Other members' devices may not.
+            // tag:funnel nodes and admins' devices may publish services to the
+            // internet with Funnel. No other node may, servers included.
             "target": [
-                "tag:server",
+                "tag:funnel",
                 "autogroup:admin",
             ],
             "attr":   ["funnel"],
@@ -588,6 +593,24 @@
                 "tag:iot:62078",
                 "bogus--regulad--internal:139",
                 "bogus--regulad--internal-v4:445",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
+            ],
+        },
+        {
+            // tag:funnel has no grant of its own (Funnel traffic comes from
+            // the internet, not through grants): only what every node gets.
+            "src": "tag:funnel",
+            "accept": [
+                "10.23.2.41:53",                               // pihole
+                "10.23.2.31:443",                              // ingress, HTTPS
+            ],
+            "deny": [
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:22",   // ingress, SSH
+                "10.23.2.145:8096",                            // aboriginal, Jellyfin
+                "tag:server:22",
+                "tag:iot:62078",
+                "bogus--regulad--internal:445",
+                "bogus--regulad--internal-v4:139",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
             ],
         },
