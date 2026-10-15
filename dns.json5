@@ -10,8 +10,8 @@
     // Global resolver: pihole (homelab). With "overrideLocalDNS" on, every
     // node sends every query not covered by "splitDNS" here.
     "nameservers": [
-        {"address": "10.23.2.41"},
-        {"address": "fd83:b84c:aa57:1:be24:11ff:fec8:9b09"},
+        {"address": "10.23.2.41"}, // pihole.regulad.internal
+        {"address": "fd83:b84c:aa57:1:be24:11ff:fec8:9b09"}, // pihole.regulad.internal
     ],
     // Resolvers for single domains, which take those domains' queries away
     // from the global resolver.
@@ -26,12 +26,12 @@
             {"address": "152.1.14.12"}, // vrd2.ddi.ncsu.edu
             {"address": "152.1.14.14"}, // vrd1.ddi.ncsu.edu
         ],
-        // Oracle VCN: its edge router.
+        // Oracle VCN: tailscalerouter.
         "pubsub.wahlecloud.oraclevcn.com": [
             {"address": "10.131.80.239"},
             {"address": "2603:c020:4016:ae50:0:efc0:c547:1a01"},
         ],
-        // LEGACY: cr1000b is IPv4 only.
+        // Homelab: cr1000b.
         "regulad-verizon-livingston.internal": [
             {"address": "10.23.0.1"},
         ],
