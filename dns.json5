@@ -1,0 +1,56 @@
+// regulad's tailnet DNS configuration, in the shape of
+// GET /api/v2/tailnet/-/dns/configuration. Converted to plain JSON and
+// applied to the tailnet by .github/workflows/dns.yml on every push to
+// master that changes it.
+//
+// Applying it replaces the whole configuration: anything this file omits is
+// cleared, and omitted "preferences" default to false. Every nameserver here
+// must also be opened to every node by the resolvers grant in policy.hujson.
+{
+    // Global resolver: pihole (homelab). With "overrideLocalDNS" on, every
+    // node sends every query not covered by "splitDNS" here.
+    "nameservers": [
+        {"address": "10.23.2.41"},
+        {"address": "fd83:b84c:aa57:1:be24:11ff:fec8:9b09"},
+    ],
+    // Resolvers for single domains, which take those domains' queries away
+    // from the global resolver.
+    "splitDNS": {
+        // NC State: ncsusplitt, a tailnet node (tag:server), by its Tailscale
+        // addresses.
+        "ncstate.net": [
+            {"address": "100.123.76.112"},
+            {"address": "fd7a:115c:a1e0::8138:4c71"},
+        ],
+        "ncsu.edu": [
+            {"address": "100.123.76.112"},
+            {"address": "fd7a:115c:a1e0::8138:4c71"},
+        ],
+        // Oracle VCN: its edge router.
+        "pubsub.wahlecloud.oraclevcn.com": [
+            {"address": "10.131.80.239"},
+            {"address": "2603:c020:4016:ae50:0:efc0:c547:1a01"},
+        ],
+        // LEGACY: cr1000b is IPv4 only.
+        "regulad-verizon-livingston.internal": [
+            {"address": "10.23.0.1"},
+        ],
+        // Homelab: arawi.
+        "regulad.internal": [
+            {"address": "10.23.0.254"},
+            {"address": "fd83:b84c:aa57:1:be24:11ff:fe08:e4e8"},
+        ],
+    },
+    // Domains appended to single-label names, tried in order.
+    "searchPaths": [
+        "regulad.internal",
+        "pubsub.wahlecloud.oraclevcn.com",
+        "sd.ncsu.edu",
+    ],
+    "preferences": {
+        // "Override DNS servers": nodes use the nameservers above instead of
+        // their local DNS, so a node that can't reach them has no DNS.
+        "overrideLocalDNS": true,
+        "magicDNS":         true,
+    },
+}

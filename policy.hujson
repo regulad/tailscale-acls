@@ -56,7 +56,7 @@
             "remove ipset:pubsub--wahlecloud--oraclevcn--com",
         ],
         // Global DNS resolver (homelab). Every device sends its queries here,
-        // since "Override DNS servers" is on (see dns.json).
+        // since "Override DNS servers" is on (see dns.json5).
         "ipset:pihole--regulad--internal": [
             "fd83:b84c:aa57:1:be24:11ff:fec8:9b09",
             "10.23.2.41",
@@ -231,7 +231,7 @@
             ],
         },
         {
-            // Every node may query every resolver in dns.json, so DNS keeps
+            // Every node may query every resolver in dns.json5, so DNS keeps
             // working for nodes with no other grant to them: pihole for
             // everything, arawi for regulad.internal, the VCN edge router for
             // pubsub.wahlecloud.oraclevcn.com, ncsusplitt for ncsu.edu and

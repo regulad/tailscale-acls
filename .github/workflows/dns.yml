@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "master" ]
     paths:
-      - dns.json
+      - dns.json5
       - .github/workflows/dns.yml
   workflow_dispatch:
 
@@ -30,11 +30,17 @@ jobs:
         with:
           persist-credentials: false
 
+      # dns.json5 carries comments; the API takes plain JSON. json5 is
+      # pinned to an exact version (npm versions are immutable) and has no
+      # dependencies.
+      - name: Convert dns.json5 to JSON
+        run: npx --yes json5@2.2.3 dns.json5 > dns.json
+
       - name: Check dns.json
         run: jq -e 'type == "object"' dns.json > /dev/null
 
       # POST /dns/configuration replaces the whole DNS configuration:
-      # anything dns.json omits is cleared, and omitted preferences
+      # anything dns.json5 omits is cleared, and omitted preferences
       # (magicDNS, overrideLocalDNS) default to false.
       - name: Apply DNS configuration
         env:
@@ -56,7 +62,7 @@ jobs:
             --data-urlencode "jwt=$id_token" | jq -r .access_token)
           echo "::add-mask::$token"
 
-          echo "::group::Changes (live -> dns.json)"
+          echo "::group::Changes (live -> dns.json5)"
           curl -sS --fail-with-body -H "Authorization: Bearer $token" \
             "$api/tailnet/$TS_TAILNET/dns/configuration" | jq -S . > live.json
           jq -S . dns.json > wanted.json
@@ -69,5 +75,5 @@ jobs:
 
           # The API answers with the configuration now in effect.
           if ! diff -u wanted.json applied.json; then
-            echo "::warning::Tailscale's applied DNS configuration differs from dns.json (see diff above)."
+            echo "::warning::Tailscale's applied DNS configuration differs from dns.json5 (see diff above)."
           fi

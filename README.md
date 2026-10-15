@@ -25,5 +25,5 @@ for AI agents but binding on anyone who changes it. It covers:
   versus `ipsets`, and `ipset:internet`.
 - **Tests:** what the policy's tests assert, how to extend them, and the
   test runner's quirks.
-- **DNS:** how `dns.json` is applied, and why every nameserver must stay
+- **DNS:** how `dns.json5` is applied, and why every nameserver must stay
   reachable.

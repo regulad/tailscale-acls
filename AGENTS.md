@@ -66,16 +66,17 @@ ports it must not reach (SSH, NetBIOS, SMB, AFP, lockdownd).
 
 ## DNS
 
-`dns.json` is the tailnet's DNS configuration, in the shape of
-`GET /api/v2/tailnet/-/dns/configuration`. Every push to `master` that
-changes it runs `.github/workflows/dns.yml`, which prints a diff against the
-live configuration and POSTs the file to `/dns/configuration`. That
-replaces the whole configuration: anything the file omits is cleared, and
+`dns.json5` is the tailnet's DNS configuration, in the shape of
+`GET /api/v2/tailnet/-/dns/configuration`, written as JSON5 so it can carry
+comments. Every push to `master` that changes it runs
+`.github/workflows/dns.yml`, which converts it to plain JSON, prints a diff
+against the live configuration and POSTs the result to `/dns/configuration`.
+That replaces the whole configuration: anything the file omits is cleared, and
 omitted `preferences` (`magicDNS`, `overrideLocalDNS`) default to false, so
 always edit the full file and never change DNS in the admin console. The
 workflow can also be run by hand (`gh workflow run dns.yml`) to re-apply
 it. Every node must be
 able to reach the global nameservers ("Override DNS servers" is on, so a
 node that can't loses DNS entirely). The resolvers grant opens every
-nameserver in `dns.json`, global and split-DNS, to every node on port 53;
+nameserver in `dns.json5`, global and split-DNS, to every node on port 53;
 add new nameservers there.
