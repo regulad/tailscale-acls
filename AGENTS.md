@@ -49,9 +49,12 @@ Keep Git commit signing enabled; never disable it.
 - Never list the homelab's public IPv6 prefix anywhere: it is
   DHCPv6-assigned and changes. Its ULA (`fd83:b84c:aa57:1::/64`) is what the
   policy uses. Grants give "the internet" as `ipset:internet`
-  (`autogroup:internet` minus the public ranges behind edge routers: the
-  VCN's /64 and NC State's 152.x ranges), not as `autogroup:internet`
-  directly. A new edge router with public routes gets removed from it too.
+  (`autogroup:internet` minus the sites behind edge routers with public
+  ranges: the VCN and NC State), not as `autogroup:internet` directly. Those
+  public ranges (the VCN's /64, NC State's 152.x) are open to every node
+  through exit nodes by a grant of their own with `via: tag:autoexit`, never
+  through their edge routers. A new edge router with public routes is
+  handled the same way.
 - NC State through its edge router is only for
   `parkeredwardwahle2017@gmail.com`'s devices (named by user, never by
   `autogroup:admin` or `autogroup:member`), tagged nodes that reach
@@ -76,7 +79,8 @@ When you add a principal or a grant, add tests for it, including denies for
 ports it must not reach (SSH, NetBIOS, SMB, AFP, lockdownd). Tests have no
 `via`, so they can't tell an exit node from a subnet router: keep every
 test true whether or not a grant's `via` applies (who may use the NC State
-router is checked on its private ranges, through `bogus--ncstate--net-v4`).
+router is checked on its private ranges, through `bogus--ncstate--net`; the
+same goes for the VCN, through `bogus--pubsub--wahlecloud--oraclevcn--com-v4`).
 
 ## DNS
 

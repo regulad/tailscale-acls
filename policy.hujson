@@ -80,19 +80,28 @@
             "152.1.14.14/32",
             "152.1.14.69/32",
         ],
-        // NC State's public (152.x) ranges: ipset:ncstate--net minus its
-        // private ranges, which an exit node would forward into its own LAN.
+        // The public ranges behind edge routers, each site's IP set minus its
+        // private ranges (which an exit node would forward into its own LAN).
+        // Every node reaches them through exit nodes, never through their
+        // edge router (see the grant that names them).
+        // The VCN's public IPv6 /64.
+        "ipset:pubsub--wahlecloud--oraclevcn--com-public": [
+            "add ipset:pubsub--wahlecloud--oraclevcn--com",
+            "remove 10.0.0.0/8",
+        ],
+        // NC State's public 152.x ranges.
         "ipset:ncstate--net-public": [
             "add ipset:ncstate--net",
             "remove 10.0.0.0/8",
             "remove 172.16.0.0/12",
         ],
-        // The internet, as reached through exit nodes, minus the public
-        // ranges behind edge routers: the VCN's IPv6 /64 and NC State's 152.x
-        // ranges. autogroup:internet alone would open every port on them to
-        // every node allowed to use exit nodes. They stay reachable only
-        // through grants that name them (or "*"). The homelab's public IPv6
-        // prefix is DHCPv6-assigned and changes, so it is never listed.
+        // The internet, as reached through exit nodes, minus the sites behind
+        // edge routers with public ranges: the VCN and NC State. A grant to
+        // autogroup:internet alone has no "via", so it would also open every
+        // port on those ranges to every node allowed to use exit nodes,
+        // through their edge routers. Their public ranges get their own grant
+        // instead. The homelab's public IPv6 prefix is DHCPv6-assigned and
+        // changes, so it is never listed.
         "ipset:internet": [
             "add autogroup:internet",
             "remove ipset:pubsub--wahlecloud--oraclevcn--com",
@@ -170,7 +179,8 @@
         // its subnet allows without being the broadcast address: IPv4 stops
         // one short of it, and IPv6 has no broadcast (and the all-ones
         // interface ID isn't reserved, RFC 5453). The plain name is IPv6;
-        // -v4 is the IPv4 counterpart.
+        // -v4 is the IPv4 counterpart. NC State is IPv4 only, so its plain
+        // name is IPv4 and it has no -v4.
         // Homelab.
         "bogus--regulad--internal":                     "fd83:b84c:aa57:1:ffff:ffff:ffff:ffff",
         "bogus--regulad--internal-v4":                  "10.23.15.254",
@@ -186,7 +196,7 @@
         // use that router: NC State's public ranges are open to every node
         // through exit nodes, and tests can't tell routers apart ("via"). As
         // a source, it checks there is no return route (its router SNATs).
-        "bogus--ncstate--net-v4":                       "172.28.255.254",
+        "bogus--ncstate--net":                          "172.28.255.254",
     },
     "nodeAttrs": [
         {
@@ -227,11 +237,19 @@
             "ip":  ["*"],
         },
         {
-            // Other admins' devices reach every node in the tailnet. The sites
-            // and the internet they reach as members and as every node do,
-            // like NC State's public ranges; not NC State through its router.
+            // Every admin's devices reach everything in the tailnet except NC
+            // State through its router, which of all users' devices only
+            // parkeredwardwahle2017@gmail.com's reach (above): every node
+            // here, and both sites and the internet through the member and
+            // every-node grants below.
             "src": ["autogroup:admin"],
             "dst": ["ipset:tail11540--ts--net"],
+            "ip":  ["*"],
+        },
+        {
+            // Every member's devices reach every server.
+            "src": ["autogroup:member"],
+            "dst": ["tag:server"],
             "ip":  ["*"],
         },
         {
@@ -300,14 +318,18 @@
             "ip":  ["*"],
         },
         {
-            // Every node may reach NC State's public ranges over the open
-            // internet, through the tailnet's exit nodes, never through the
-            // NC State router. "via" takes tags only, so Mullvad's exit nodes
-            // can't be named (tailscale/tailscale#15474). A device that
-            // installs the NC State router's routes (every node sees it, for
-            // DNS) sends 152.x there instead, where this doesn't apply.
+            // Every node may reach the public ranges behind edge routers (the
+            // VCN's /64, NC State's 152.x) over the open internet, through the
+            // tailnet's exit nodes, never through their edge routers. "via"
+            // takes tags only, so Mullvad's exit nodes can't be named
+            // (tailscale/tailscale#15474). A device that installs an edge
+            // router's routes sends those ranges to it instead, where this
+            // doesn't apply; every node sees the NC State router, for DNS.
             "src": ["*"],
-            "dst": ["ipset:ncstate--net-public"],
+            "dst": [
+                "ipset:pubsub--wahlecloud--oraclevcn--com-public",
+                "ipset:ncstate--net-public",
+            ],
             "via": ["tag:autoexit"],
             "ip":  ["*"],
         },
@@ -444,9 +466,11 @@
     "tests": [
         {
             // A tailnet node with no grant of its own gets only what every
-            // node gets: DNS, the web entry point, and the internet minus the
-            // VCN and NC State. NC State is IPv4 only, so the IPv4 test
-            // covers its resolvers.
+            // node gets: DNS, the web entry point, and the internet. The VCN's
+            // and NC State's public ranges it reaches through exit nodes only,
+            // which tests can't tell from their routers ("via"), so the IPv4
+            // test checks the sites' private ranges instead. NC State is IPv4
+            // only, so the IPv4 test also covers its resolvers.
             "src": "bogus--tail11540--ts--net",
             "accept": [
                 "[2606:4700:4700::1111]:443",                  // internet (Cloudflare)
@@ -466,7 +490,6 @@
                 "tag:server:22",
                 "tag:iot:62078",
                 "bogus--regulad--internal:445",
-                "bogus--pubsub--wahlecloud--oraclevcn--com:548",
             ],
         },
         {
@@ -491,7 +514,7 @@
                 "tag:iot:62078",
                 "bogus--regulad--internal-v4:445",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
-                "bogus--ncstate--net-v4:445",
+                "bogus--ncstate--net:445",
             ],
         },
         {
@@ -526,7 +549,7 @@
                 "bogus--regulad--internal-v4:445",
                 "bogus--pubsub--wahlecloud--oraclevcn--com:548",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
-                "bogus--ncstate--net-v4:445",
+                "bogus--ncstate--net:445",
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
                 "vrd1--ddi--ncsu--edu:22",
@@ -538,7 +561,7 @@
             "accept": [
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
-                "bogus--ncstate--net-v4:22",
+                "bogus--ncstate--net:22",
                 "tag:iot:62078",
                 "tag:edge-pubsub--wahlecloud--oraclevcn--com:22",
                 "bogus--regulad--internal:445",
@@ -597,7 +620,7 @@
             "accept": [
                 "tag:server:22",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
-                "bogus--ncstate--net-v4:22",
+                "bogus--ncstate--net:22",
             ],
         },
         {
@@ -619,7 +642,7 @@
             // No return route from NC State: its router SNATs, so its
             // addresses get no grant as a source. Only the every-node ("*")
             // grants match them, and with SNAT none ever arrives.
-            "src": "bogus--ncstate--net-v4",
+            "src": "bogus--ncstate--net",
             "deny": [
                 "10.23.2.31:22",                               // ingress, SSH
                 "10.23.2.145:8096",                            // aboriginal, Jellyfin
@@ -660,9 +683,8 @@
                 "tag:iot:62078",
                 "bogus--regulad--internal:445",
                 "bogus--regulad--internal-v4:139",
-                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
-                "bogus--ncstate--net-v4:22",
+                "bogus--ncstate--net:22",
             ],
         },
         {
@@ -701,9 +723,8 @@
                 "tag:iot:62078",
                 "bogus--regulad--internal:445",
                 "bogus--regulad--internal-v4:548",
-                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
-                "bogus--ncstate--net-v4:62078",
+                "bogus--ncstate--net:62078",
             ],
         },
         {
@@ -736,8 +757,8 @@
                 "tag:iot:62078",
                 "bogus--regulad--internal:445",
                 "bogus--regulad--internal-v4:548",
-                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
-                "bogus--ncstate--net-v4:548",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
+                "bogus--ncstate--net:548",
             ],
         },
         {
@@ -757,7 +778,7 @@
                 "bogus--regulad--internal:139",
                 "bogus--regulad--internal-v4:445",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
-                "bogus--ncstate--net-v4:139",
+                "bogus--ncstate--net:139",
             ],
         },
         {
@@ -778,7 +799,7 @@
                 "bogus--regulad--internal:445",
                 "bogus--regulad--internal-v4:139",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
-                "bogus--ncstate--net-v4:22",
+                "bogus--ncstate--net:22",
             ],
         },
         {
@@ -798,7 +819,6 @@
                 "tag:iot:62078",
                 "bogus--regulad--internal:445",
                 "bogus--regulad--internal-v4:548",
-                "bogus--pubsub--wahlecloud--oraclevcn--com:22",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:62078",
             ],
         },
@@ -819,7 +839,7 @@
                 "[fd7a:115c:a1e0::e738:392f]:445",             // aameter, SMB
                 "100.112.57.46:548",                           // aameter, AFP
                 "[fd7a:115c:a1e0::e738:392f]:62078",           // aameter, lockdownd
-                "bogus--ncstate--net-v4:443",
+                "bogus--ncstate--net:443",
             ],
         },
     ],
