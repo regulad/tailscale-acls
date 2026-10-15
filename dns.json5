@@ -16,15 +16,15 @@
     // Resolvers for single domains, which take those domains' queries away
     // from the global resolver.
     "splitDNS": {
-        // NC State: ncsusplitt, a tailnet node (tag:server), by its Tailscale
-        // addresses.
+        // NC State: its own resolvers, reached through the NC State edge
+        // router (tag:edge-ncstate--net). IPv4 only, like all of NC State.
         "ncstate.net": [
-            {"address": "100.123.76.112"},
-            {"address": "fd7a:115c:a1e0::8138:4c71"},
+            {"address": "152.1.14.12"}, // vrd2.ddi.ncsu.edu
+            {"address": "152.1.14.14"}, // vrd1.ddi.ncsu.edu
         ],
         "ncsu.edu": [
-            {"address": "100.123.76.112"},
-            {"address": "fd7a:115c:a1e0::8138:4c71"},
+            {"address": "152.1.14.12"}, // vrd2.ddi.ncsu.edu
+            {"address": "152.1.14.14"}, // vrd1.ddi.ncsu.edu
         ],
         // Oracle VCN: its edge router.
         "pubsub.wahlecloud.oraclevcn.com": [

@@ -43,12 +43,15 @@ Keep Git commit signing enabled; never disable it.
 - IPv6 is first class in this network; IPv4 is secondary. Every machine and
   subnet is listed with its IPv6 address(es), IPv6 first. Don't add an
   IPv4-only entry without finding the IPv6 counterpart; a machine that
-  genuinely has no IPv6 is a legacy host, and its comment says so.
+  genuinely has no IPv6 is a legacy host, and its comment says so. All of
+  NC State is IPv4-only, so its routes and resolvers have no IPv6
+  counterpart to find.
 - Never list the homelab's public IPv6 prefix anywhere: it is
   DHCPv6-assigned and changes. Its ULA (`fd83:b84c:aa57:1::/64`) is what the
   policy uses. Grants give "the internet" as `ipset:internet`
-  (`autogroup:internet` minus the VCN's public /64), not as
-  `autogroup:internet` directly.
+  (`autogroup:internet` minus the public ranges behind edge routers: the
+  VCN's /64 and NC State's 152.x ranges), not as `autogroup:internet`
+  directly. A new edge router with public routes gets removed from it too.
 - Name a single-address machine in `hosts`; anything with several addresses
   (a site's subnets, a machine with IPv6 and IPv4) is an `ipsets` entry.
 
