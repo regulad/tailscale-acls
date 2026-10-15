@@ -52,6 +52,14 @@ Keep Git commit signing enabled; never disable it.
   (`autogroup:internet` minus the public ranges behind edge routers: the
   VCN's /64 and NC State's 152.x ranges), not as `autogroup:internet`
   directly. A new edge router with public routes gets removed from it too.
+- NC State through its edge router is only for
+  `parkeredwardwahle2017@gmail.com`'s devices (named by user, never by
+  `autogroup:admin` or `autogroup:member`), tagged nodes that reach
+  everything, and the devices behind the site routers; every node also gets
+  DNS to vrd1/vrd2 through it, and NC State's public ranges through exit
+  nodes. Grants decide what a router lets through, not which routes a device
+  installs. NC State's `10.0.0.0/8` covers both sites' IPv4 subnets, so a
+  grant to a site's whole subnet names that site's router in `via`.
 - Name a single-address machine in `hosts`; anything with several addresses
   (a site's subnets, a machine with IPv6 and IPv4) is an `ipsets` entry.
 
@@ -65,7 +73,10 @@ Site devices are tested through the test-only `bogus--*` hosts. A tag
 source matches the every-node (`*`) grants only over IPv4 in tests, so check
 those grants over IPv6 from `bogus--tail11540--ts--net`, not from a tag.
 When you add a principal or a grant, add tests for it, including denies for
-ports it must not reach (SSH, NetBIOS, SMB, AFP, lockdownd).
+ports it must not reach (SSH, NetBIOS, SMB, AFP, lockdownd). Tests have no
+`via`, so they can't tell an exit node from a subnet router: keep every
+test true whether or not a grant's `via` applies (who may use the NC State
+router is checked on its private ranges, through `bogus--ncstate--net-v4`).
 
 ## DNS
 

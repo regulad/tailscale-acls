@@ -42,7 +42,11 @@
         // SNAT (NC State routes only the VPN's own address back), so no NC
         // State address ever appears on the tailnet. There is no return
         // route: ipset:ncstate--net is never a grant source, and the router
-        // itself has no grant of its own.
+        // itself has no grant of its own. Through it, NC State is only for
+        // parkeredwardwahle2017@gmail.com's devices, tagged nodes that reach
+        // everything, and the devices behind the site routers; every other
+        // node gets DNS to vrd1/vrd2 through it, and NC State's public ranges
+        // only over the open internet.
         "tag:edge-ncstate--net":                       ["autogroup:admin"],
     },
     // Each site's subnets, and each machine with several addresses, named
@@ -76,6 +80,13 @@
             "152.1.14.14/32",
             "152.1.14.69/32",
         ],
+        // NC State's public (152.x) ranges: ipset:ncstate--net minus its
+        // private ranges, which an exit node would forward into its own LAN.
+        "ipset:ncstate--net-public": [
+            "add ipset:ncstate--net",
+            "remove 10.0.0.0/8",
+            "remove 172.16.0.0/12",
+        ],
         // The internet, as reached through exit nodes, minus the public
         // ranges behind edge routers: the VCN's IPv6 /64 and NC State's 152.x
         // ranges. autogroup:internet alone would open every port on them to
@@ -86,6 +97,11 @@
             "add autogroup:internet",
             "remove ipset:pubsub--wahlecloud--oraclevcn--com",
             "remove ipset:ncstate--net",
+        ],
+        // Every node in the tailnet: Tailscale's address ranges.
+        "ipset:tail11540--ts--net": [
+            "fd7a:115c:a1e0::/48",
+            "100.64.0.0/10",
         ],
         // Global DNS resolver (homelab). Every device sends its queries here,
         // since "Override DNS servers" is on (see dns.json5).
@@ -165,11 +181,12 @@
         // with no grant of its own.
         "bogus--tail11540--ts--net":                    "fd7a:115c:a1e0:ffff:ffff:ffff:ffff:ffff",
         "bogus--tail11540--ts--net-v4":                 "100.127.255.254",
-        // NC State (IPv4 only). As a destination, it is in 152.1.0.0/16, a
-        // public range, so it also checks that ipset:internet leaves NC
-        // State out. As a source, it checks there is no return route (its
-        // router SNATs).
-        "bogus--ncstate--net-v4":                       "152.1.255.254",
+        // NC State (IPv4 only), in 172.28.0.0/16, a private range only
+        // reachable through its router. As a destination, it checks who may
+        // use that router: NC State's public ranges are open to every node
+        // through exit nodes, and tests can't tell routers apart ("via"). As
+        // a source, it checks there is no return route (its router SNATs).
+        "bogus--ncstate--net-v4":                       "172.28.255.254",
     },
     "nodeAttrs": [
         {
@@ -199,9 +216,22 @@
     "randomizeClientPort": true,
     "grants": [
         {
-            // Untagged devices of admin users reach everything.
-            "src": ["autogroup:admin"],
+            // parkeredwardwahle2017@gmail.com's devices reach everything,
+            // NC State through its edge router included. Of user devices,
+            // only these may use that router beyond DNS (grants don't decide
+            // which routes a device installs, only what the router lets
+            // through). Named by user, not autogroup:admin, so a new admin
+            // doesn't get it.
+            "src": ["parkeredwardwahle2017@gmail.com"],
             "dst": ["*"],
+            "ip":  ["*"],
+        },
+        {
+            // Other admins' devices reach every node in the tailnet. The sites
+            // and the internet they reach as members and as every node do,
+            // like NC State's public ranges; not NC State through its router.
+            "src": ["autogroup:admin"],
+            "dst": ["ipset:tail11540--ts--net"],
             "ip":  ["*"],
         },
         {
@@ -232,13 +262,22 @@
             "ip":  ["*"],
         },
         {
-            // Every member reaches both sites' subnets through the edge
-            // routers.
+            // Every member reaches the homelab's subnets through its edge
+            // router, and only that one: NC State's 10.0.0.0/8 covers
+            // 10.23.0.0/20 too, so without "via" this would also open NC
+            // State's own 10.23.0.0/20 through the NC State router.
             "src": ["autogroup:member"],
-            "dst": [
-                "ipset:regulad--internal",
-                "ipset:pubsub--wahlecloud--oraclevcn--com",
-            ],
+            "dst": ["ipset:regulad--internal"],
+            "via": ["tag:edge-regulad--internal"],
+            "ip":  ["*"],
+        },
+        {
+            // Every member reaches the VCN's subnets through its edge router,
+            // and only that one (NC State's 10.0.0.0/8 covers 10.131.80.0/24
+            // too).
+            "src": ["autogroup:member"],
+            "dst": ["ipset:pubsub--wahlecloud--oraclevcn--com"],
+            "via": ["tag:edge-pubsub--wahlecloud--oraclevcn--com"],
             "ip":  ["*"],
         },
         {
@@ -254,9 +293,22 @@
         },
         {
             // Every node may use any exit node (Mullvad's too, for devices
-            // with the mullvad attribute), for the internet minus the VCN.
+            // with the mullvad attribute), for the internet minus the VCN and
+            // NC State.
             "src": ["*"],
             "dst": ["ipset:internet"],
+            "ip":  ["*"],
+        },
+        {
+            // Every node may reach NC State's public ranges over the open
+            // internet, through the tailnet's exit nodes, never through the
+            // NC State router. "via" takes tags only, so Mullvad's exit nodes
+            // can't be named (tailscale/tailscale#15474). A device that
+            // installs the NC State router's routes (every node sees it, for
+            // DNS) sends 152.x there instead, where this doesn't apply.
+            "src": ["*"],
+            "dst": ["ipset:ncstate--net-public"],
+            "via": ["tag:autoexit"],
             "ip":  ["*"],
         },
         {
@@ -435,7 +487,6 @@
                 "10.23.2.145:8096",                            // aboriginal, Jellyfin
                 "100.70.168.20:548",                           // aboriginal (tailnet), AFP
                 "10.23.2.72:9982",                             // tvheadend
-                "vrd1--ddi--ncsu--edu:22",
                 "tag:server:22",
                 "tag:iot:62078",
                 "bogus--regulad--internal-v4:445",
@@ -445,17 +496,14 @@
         },
         {
             // DNS to NC State's resolvers, over UDP and TCP explicitly, from a
-            // node with no grant of its own: the resolvers grant alone must
-            // open them, since ipset:internet leaves NC State out.
+            // node with no grant of its own. Their other ports are open to it
+            // over the open internet (exit nodes) but not through the NC State
+            // router, which tests can't tell apart, so they aren't probed.
             "src": "bogus--tail11540--ts--net-v4",
             "proto": "udp",
             "accept": [
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
-            ],
-            "deny": [
-                "vrd1--ddi--ncsu--edu:139",
-                "vrd2--ddi--ncsu--edu:139",
             ],
         },
         {
@@ -465,13 +513,10 @@
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
             ],
-            "deny": [
-                "vrd1--ddi--ncsu--edu:22",
-                "vrd2--ddi--ncsu--edu:445",
-            ],
         },
         {
-            // Admin devices reach everything.
+            // parkeredwardwahle2017@gmail.com's devices reach everything,
+            // NC State through its router included.
             "src": "parkeredwardwahle2017@gmail.com",
             "accept": [
                 "tag:server:22",
@@ -484,14 +529,16 @@
                 "bogus--ncstate--net-v4:445",
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
+                "vrd1--ddi--ncsu--edu:22",
             ],
         },
         {
-            // Servers reach everything.
+            // Servers reach everything, NC State through its router included.
             "src": "tag:server",
             "accept": [
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
+                "bogus--ncstate--net-v4:22",
                 "tag:iot:62078",
                 "tag:edge-pubsub--wahlecloud--oraclevcn--com:22",
                 "bogus--regulad--internal:445",
@@ -545,10 +592,12 @@
             ],
         },
         {
+            // Over IPv4 they also reach NC State through its router.
             "src": "bogus--regulad--internal-v4",
             "accept": [
                 "tag:server:22",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:22",
+                "bogus--ncstate--net-v4:22",
             ],
         },
         {
@@ -755,7 +804,8 @@
         },
         {
             // mark@engagent.dev (aameter is shared with them): HTTPS on
-            // aameter, nothing else on it.
+            // aameter, nothing else on it, and not NC State through its
+            // router.
             "src": "mark@engagent.dev",
             "accept": [
                 "[fd7a:115c:a1e0::e738:392f]:443",             // aameter, HTTPS
@@ -769,6 +819,7 @@
                 "[fd7a:115c:a1e0::e738:392f]:445",             // aameter, SMB
                 "100.112.57.46:548",                           // aameter, AFP
                 "[fd7a:115c:a1e0::e738:392f]:62078",           // aameter, lockdownd
+                "bogus--ncstate--net-v4:443",
             ],
         },
     ],
