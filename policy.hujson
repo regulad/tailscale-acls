@@ -259,7 +259,7 @@
             "ip":  ["*"],
         },
         {
-            // Servers reach everything, for now.
+            // Generic servers reach everything
             "src": ["tag:server"],
             "dst": ["*"],
             "ip":  ["*"],
