@@ -29,6 +29,13 @@
         // network access: give a node it alongside the tag that does (e.g.
         // tag:server).
         "tag:funnel":     ["autogroup:admin"],
+        // Tagged nodes that may use Mullvad exit nodes (see "nodeAttrs";
+        // members' devices may without it). Tagged nodes aren't members, so
+        // they get Mullvad only through this tag. It grants no network
+        // access: the internet grant every node gets is all Mullvad needs, so
+        // give a node it alongside the tag for anything else (e.g.
+        // tag:server).
+        "tag:mullvad":    ["autogroup:admin"],
         // Edge routers, one tag per router so each site's routes are bound to
         // exactly one node. The homelab and VCN routers run with SNAT off, so
         // devices behind them keep their own addresses on the tailnet.
@@ -200,11 +207,15 @@
     },
     "nodeAttrs": [
         {
-            // Every member's devices may use Mullvad exit nodes. Each device
-            // takes a slot of the Mullvad add-on (five per license), handed
-            // out as devices connect; devices beyond that get no Mullvad.
-            // Using them also takes an internet grant (ipset:internet).
-            "target": ["autogroup:member"],
+            // Every member's devices, and tag:mullvad nodes, may use Mullvad
+            // exit nodes. Each device takes a slot of the Mullvad add-on
+            // (five per license), handed out as devices connect; devices
+            // beyond that get no Mullvad. Using them also takes an internet
+            // grant (ipset:internet).
+            "target": [
+                "autogroup:member",
+                "tag:mullvad",
+            ],
             "attr":   ["mullvad"],
         },
         {
@@ -799,6 +810,30 @@
                 "bogus--regulad--internal:445",
                 "bogus--regulad--internal-v4:139",
                 "bogus--pubsub--wahlecloud--oraclevcn--com-v4:548",
+                "bogus--ncstate--net:22",
+            ],
+        },
+        {
+            // tag:mullvad has no grant of its own (Mullvad comes from its
+            // nodeAttr, which tests can't check): only what every node gets,
+            // the internet Mullvad needs included.
+            "src": "tag:mullvad",
+            "accept": [
+                "1.1.1.1:443",                                 // internet (Cloudflare)
+                "10.23.2.41:53",                               // pihole
+                "vrd1--ddi--ncsu--edu:53",
+                "vrd2--ddi--ncsu--edu:53",
+                "10.23.2.31:443",                              // ingress, HTTPS
+            ],
+            "deny": [
+                "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:22",   // ingress, SSH
+                "10.23.2.41:139",                              // pihole, NetBIOS
+                "[fd83:b84c:aa57:1:be24:11ff:fe5d:be75]:8096", // aboriginal, Jellyfin
+                "tag:server:22",
+                "tag:iot:62078",
+                "bogus--regulad--internal:445",
+                "bogus--regulad--internal-v4:548",
+                "bogus--pubsub--wahlecloud--oraclevcn--com-v4:139",
                 "bogus--ncstate--net:22",
             ],
         },
