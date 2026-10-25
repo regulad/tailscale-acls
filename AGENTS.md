@@ -45,7 +45,10 @@ Keep Git commit signing enabled; never disable it.
   IPv4-only entry without finding the IPv6 counterpart; a machine that
   genuinely has no IPv6 is a legacy host, and its comment says so. All of
   NC State is IPv4-only, so its routes and resolvers have no IPv6
-  counterpart to find.
+  counterpart to find. The IP pool new nodes are addressed from
+  (`ipPool`, `100.87.0.0/16`) is IPv4-only too: Tailscale doesn't support
+  IPv6 pools yet, so new nodes' IPv6 addresses still come from anywhere in
+  `fd7a:115c:a1e0::/48`.
 - Never list the homelab's public IPv6 prefix anywhere: it is
   DHCPv6-assigned and changes. Its ULA (`fd83:b84c:aa57:1::/64`) is what the
   policy uses. Grants give "the internet" as `ipset:internet`

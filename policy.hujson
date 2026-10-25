@@ -114,8 +114,11 @@
             "remove ipset:pubsub--wahlecloud--oraclevcn--com",
             "remove ipset:ncstate--net",
         ],
-        // Every node in the tailnet: Tailscale's address ranges.
-        "ipset:tail11540--ts--net": [
+        // Every node in the tailnet: Tailscale's address ranges, all of
+        // them. New nodes get IPv4 addresses from the IP pool only (see
+        // "nodeAttrs"), but older nodes keep theirs and an admin can give a
+        // node any address in these ranges.
+        "ipset:ts--net": [
             "fd7a:115c:a1e0::/48",
             "100.64.0.0/10",
         ],
@@ -232,6 +235,16 @@
             ],
             "attr":   ["funnel"],
         },
+        {
+            // IP pool (beta): new nodes get their IPv4 address from
+            // 100.87.0.0/16, which is 100.64.0.0/10 followed by the bits
+            // 010111. Existing nodes keep their addresses. IPv4 only, with
+            // no IPv6 counterpart: Tailscale doesn't support IPv6 pools yet,
+            // so every node's IPv6 address still comes from anywhere in
+            // fd7a:115c:a1e0::/48.
+            "target": ["*"],
+            "ipPool": ["100.87.0.0/16"],
+        },
     ],
     // Use a random WireGuard listen port instead of the fixed 41641.
     "randomizeClientPort": true,
@@ -254,7 +267,7 @@
             // here, and both sites and the internet through the member and
             // every-node grants below.
             "src": ["autogroup:admin"],
-            "dst": ["ipset:tail11540--ts--net"],
+            "dst": ["ipset:ts--net"],
             "ip":  ["*"],
         },
         {
