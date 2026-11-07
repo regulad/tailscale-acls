@@ -122,11 +122,19 @@
             "fd7a:115c:a1e0::/48",
             "100.64.0.0/10",
         ],
-        // Global DNS resolver (homelab). Every device sends its queries here,
-        // since "Override DNS servers" is on (see dns.json5).
+        // Global DNS resolver (homelab). Every device sends its queries here
+        // and to pihole2, since "Override DNS servers" is on (see dns.json5).
         "ipset:pihole--regulad--internal": [
             "fd83:b84c:aa57:1:be24:11ff:fec8:9b09",
             "10.23.2.41",
+        ],
+        // Global DNS resolver (Oracle VCN), beside pihole: the same blocky,
+        // with the VCN edge router's resolver as its upstream, so DNS keeps
+        // answering while the homelab is down. Reached through the VCN edge
+        // router.
+        "ipset:pihole2--pubsub--wahlecloud--oraclevcn--com": [
+            "2603:c020:4016:ae50::53",
+            "10.131.80.53",
         ],
         // Split-DNS resolver for regulad.internal (homelab).
         "ipset:arawi--regulad--internal": [
@@ -368,15 +376,16 @@
         },
         {
             // Every node may query every resolver in dns.json5, so DNS keeps
-            // working for nodes with no other grant to them: pihole for
-            // everything, arawi for regulad.internal, the VCN edge router for
-            // pubsub.wahlecloud.oraclevcn.com, NC State's vrd1 and vrd2
-            // (through the NC State edge router) for ncsu.edu and
-            // ncstate.net, and the legacy cr1000b for
+            // working for nodes with no other grant to them: pihole and
+            // pihole2 for everything, arawi for regulad.internal, the VCN
+            // edge router for pubsub.wahlecloud.oraclevcn.com, NC State's
+            // vrd1 and vrd2 (through the NC State edge router) for ncsu.edu
+            // and ncstate.net, and the legacy cr1000b for
             // regulad-verizon-livingston.internal.
             "src": ["*"],
             "dst": [
                 "ipset:pihole--regulad--internal",
+                "ipset:pihole2--pubsub--wahlecloud--oraclevcn--com",
                 "ipset:arawi--regulad--internal",
                 "ipset:tailscalerouter--pubsub--wahlecloud--oraclevcn--com",
                 "vrd1--ddi--ncsu--edu",
@@ -499,6 +508,7 @@
             "accept": [
                 "[2606:4700:4700::1111]:443",                  // internet (Cloudflare)
                 "[fd83:b84c:aa57:1:be24:11ff:fec8:9b09]:53",   // pihole
+                "[2603:c020:4016:ae50::53]:53",                // pihole2
                 "[fd83:b84c:aa57:1:be24:11ff:fe08:e4e8]:53",   // arawi
                 "[2603:c020:4016:ae50:0:efc0:c547:1a01]:53",   // VCN edge router
                 "[fd83:b84c:aa57:1:be24:11ff:fe4a:25fa]:443",  // ingress, HTTPS
@@ -521,6 +531,7 @@
             "accept": [
                 "1.1.1.1:443",                                 // internet (Cloudflare)
                 "10.23.2.41:53",                               // pihole
+                "10.131.80.53:53",                             // pihole2
                 "10.23.0.254:53",                              // arawi
                 "10.131.80.239:53",                            // VCN edge router
                 "vrd1--ddi--ncsu--edu:53",
@@ -688,6 +699,7 @@
                 "10.23.2.31:443",                              // ingress, HTTPS
                 "10.23.2.31:80",                               // ingress, HTTP
                 "10.23.2.41:53",                               // pihole
+                "10.131.80.53:53",                             // pihole2
                 "10.23.0.254:53",                              // arawi
                 "10.131.80.239:53",                            // VCN edge router
                 "vrd1--ddi--ncsu--edu:53",
@@ -727,6 +739,7 @@
                 "10.23.2.31:443",                              // ingress, HTTPS
                 "10.23.2.31:80",                               // ingress, HTTP
                 "10.23.2.41:53",                               // pihole
+                "10.131.80.53:53",                             // pihole2
                 "10.23.0.254:53",                              // arawi
                 "10.131.80.239:53",                            // VCN edge router
                 "vrd1--ddi--ncsu--edu:53",
@@ -757,6 +770,7 @@
             "proto": "udp",
             "accept": [
                 "10.23.2.41:53",                               // pihole
+                "10.131.80.53:53",                             // pihole2
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
             ],
@@ -770,6 +784,7 @@
             "src": "tag:relay",
             "accept": [
                 "10.23.2.41:53",                               // pihole
+                "10.131.80.53:53",                             // pihole2
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
                 "10.23.2.31:443",                              // ingress, HTTPS
@@ -791,6 +806,7 @@
             "src": "tag:autorouter",
             "accept": [
                 "10.23.2.41:53",                               // pihole
+                "10.131.80.53:53",                             // pihole2
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
                 "10.23.2.31:80",                               // ingress, HTTP
@@ -811,6 +827,7 @@
             "src": "tag:funnel",
             "accept": [
                 "10.23.2.41:53",                               // pihole
+                "10.131.80.53:53",                             // pihole2
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
                 "10.23.2.31:443",                              // ingress, HTTPS
@@ -834,6 +851,7 @@
             "accept": [
                 "1.1.1.1:443",                                 // internet (Cloudflare)
                 "10.23.2.41:53",                               // pihole
+                "10.131.80.53:53",                             // pihole2
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
                 "10.23.2.31:443",                              // ingress, HTTPS
@@ -856,6 +874,7 @@
             "src": "tag:edge-ncstate--net",
             "accept": [
                 "10.23.2.41:53",                               // pihole
+                "10.131.80.53:53",                             // pihole2
                 "vrd1--ddi--ncsu--edu:53",
                 "vrd2--ddi--ncsu--edu:53",
                 "10.23.2.31:443",                              // ingress, HTTPS
