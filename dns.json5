@@ -7,11 +7,14 @@
 // cleared, and omitted "preferences" default to false. Every nameserver here
 // must also be opened to every node by the resolvers grant in policy.hujson.
 {
-    // Global resolver: pihole (homelab). With "overrideLocalDNS" on, every
-    // node sends every query not covered by "splitDNS" here.
+    // Global resolvers: pihole (homelab) and pihole2 (Oracle VCN), which
+    // keeps answering while the homelab is down. With "overrideLocalDNS" on,
+    // every node sends every query not covered by "splitDNS" here.
     "nameservers": [
         {"address": "10.23.2.41"}, // pihole.regulad.internal
         {"address": "fd83:b84c:aa57:1:be24:11ff:fec8:9b09"}, // pihole.regulad.internal
+        {"address": "10.131.80.53"}, // pihole2.pubsub.wahlecloud.oraclevcn.com
+        {"address": "2603:c020:4016:ae50::53"}, // pihole2.pubsub.wahlecloud.oraclevcn.com
     ],
     // Resolvers for single domains, which take those domains' queries away
     // from the global resolver.
